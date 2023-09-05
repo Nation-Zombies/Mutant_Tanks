@@ -323,6 +323,38 @@ mt_pluginenabled "1"
 2. Disable the plugin by restarting the server. (Using `sm plugins unload` will take too long.)
 </details>
 
+## Disabling Announcements
+<details>
+	<summary>Click to expand!</summary>
+
+> You need to disable a few settings.	
+```
+"Mutant Tanks"
+{
+	"Plugin Settings"
+	{
+		"Announcements"
+		{
+			"Announce Arrival"		"0"
+			"Announce Death"		"0"
+			"Announce Kill"			"0"
+		}
+	}
+	"Tank #1"
+	{
+		"General"
+		{
+			"Tank Note"			"0" // you have to do this for each tank
+		}
+		"Absorb Ability"
+		{
+			"Ability Message"		"0" // you have to do this for each ability
+		}
+	}
+}
+```
+</details>
+
 ## Custom Configuration Files
 > Mutant Tanks has features that allow for creating and executing custom configuration files.
 <details>
