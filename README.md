@@ -4,9 +4,7 @@
 [Donate to Motivate](https://paypal.me/Psyk0tikism?locale.x=en_US)
 
 ## Languages
-- Click on one of the flags to view in another language.
-<a href = "https://github.com/Psykotikism/Mutant_Tanks/blob/master/README_RU.md">
-<img src = "https://cdn.staticaly.com/gh/hjnilsson/country-flags/master/svg/ru.svg" alt = "Russian" width = "32"></a>
+[Russian](https://github.com/Psykotikism/Mutant_Tanks/blob/master/README_RU.md)
 
 ## License
 > The following license is placed inside the source code of each plugin and include file.
@@ -31,14 +29,14 @@ Originally an extended version of Super Tanks, Mutant Tanks combines Last Boss, 
 	<summary>Click to expand!</summary>
 
 1. `SourceMod 1.12.0.6985` or higher
-2. [`DHooks 2.2.0-detours15` or higher](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
-3. Recommended (Optional):
+2. Recommended (Optional):
+- [`Actions`](https://forums.alliedmods.net/showthread.php?t=336374)
 - [`AutoExecConfig`](https://forums.alliedmods.net/showthread.php?t=204254)
 - [`Explosive Chains Credit`](https://forums.alliedmods.net/showthread.php?t=334655)
 - [`ThirdPersonShoulder_Detect`](https://forums.alliedmods.net/showthread.php?t=298649)
 - [`Updater`](https://github.com/Teamkiller324/Updater)
 - [`WeaponHandling_API`](https://forums.alliedmods.net/showthread.php?t=319947)
-4. Knowledge of installing SourceMod plugins.
+3. Knowledge of installing SourceMod plugins.
 </details>
 
 ## Notes
@@ -83,6 +81,7 @@ Originally an extended version of Super Tanks, Mutant Tanks combines Last Boss, 
 // Accessible by admins with "z" (Root) flag only.
 sm_mt_admin - View the Mutant Tanks admin panel.
 sm_mt_config - View a section of a config file.
+sm_mt_edit - Edit a setting in the config file.
 sm_mt_list - View a list of installed abilities.
 sm_mt_reload - Reload the config file.
 sm_tank - Spawn a Mutant Tank.
@@ -90,12 +89,7 @@ sm_mt_tank - Spawn a Mutant Tank.
 sm_mt_version - Find out the current version of Mutant Tanks.
 
 // Accessible by the developer only.
-sm_mt_config2 - View a section of a config file.
 sm_mt_dev - Used only by and for the developer.
-sm_mt_list2 - View a list of installed abilities.
-sm_tank2 - Spawn a Mutant Tank.
-sm_mt_tank2 - Spawn a Mutant Tank.
-sm_mt_version2 - Find out the current version of Mutant Tanks.
 
 // Accessible by all players.
 sm_mutanttank - Choose a Mutant Tank. (This command only works if the "Spawn Mode" setting under the "Plugin Settings/Human Support" section is set to 0.)
@@ -157,6 +151,7 @@ sm_mt_pimp - View information about the Pimp ability.
 sm_mt_puke - View information about the Puke ability.
 sm_mt_pyro - View information about the Pyro ability.
 sm_mt_quiet - View information about the Quiet ability.
+sm_mt_recall - View information about the Recall ability.
 sm_mt_recoil - View information about the Recoil ability.
 sm_mt_regen - View information about the Regen ability.
 sm_mt_respawn - View information about the Respawn ability.
@@ -956,6 +951,12 @@ These are basically temporary Tanks that you can create for certain situations, 
 	"MutantTanks"
 	{
 		"item"		"sm_mt_tank"
+		"item"		"sm_mt_smoker"
+		"item"		"sm_mt_boomer"
+		"item"		"sm_mt_hunter"
+		"item"		"sm_mt_spitter"
+		"item"		"sm_mt_jockey"
+		"item"		"sm_mt_charger"
 		"item"		"sm_mt_config"
 		"item"		"sm_mt_info"
 		"item"		"sm_mt_list"
@@ -1065,8 +1066,11 @@ forward void MT_OnConfigsLoad(int mode);
  * @param type			The Mutant Tank type the config parser is currently on. (Used for Mutant Tank-specific settings.)
  * @param admin			Client index of an admin. (Used for admin-specific settings.)
  * @param mode			1 = Load general settings, 2 = 1 + load type settings, 3 = Load admin settings
+ * @param special		True if reading a special infected setting, false otherwise.
+ * @param specsection		The special section the config parser is currently on.
+ * @param specType		Special Infected type.
  **/
-forward void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const char[] value, int type, int admin, int mode);
+forward void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const char[] value, int type, int admin, int mode, bool special, const char[] specsection, int specType);
 
 /**
  * Called when the Tank is passed on to another player or bot.
@@ -1284,11 +1288,12 @@ forward Action MT_OnTypeChosen(int &type, int tank);
  * Returns if a certain Mutant Tank type can spawn.
  *
  * @param type			Mutant Tank type.
+ * @param specType		Special Infected type.
  *
  * @return			True if the type can spawn, false otherwise.
  * @error			Type is 0 or less.
  **/
-native bool MT_CanTypeSpawn(int type);
+native bool MT_CanTypeSpawn(int type, int specType);
 
 /**
  * Deafens a player.
@@ -1324,11 +1329,12 @@ native bool MT_DoesSurvivorHaveRewardType(int survivor, int type);
  * Returns if a certain Mutant Tank type requires human-controlled survivors to be present to be effective.
  *
  * @param type			Mutant Tank type.
+ * @param tank			Client index of the Tank if the type chosen is being applied directly, 0 otherwise.
  *
  * @return			True if the type requires human-controlled survivors to be present, false otherwise.
  * @error			Type is 0 or less.
  **/
-native bool MT_DoesTypeRequireHumans(int type);
+native bool MT_DoesTypeRequireHumans(int type, int tank);
 
 /**
  * Returns the current access flags set by the core plugin.
@@ -1436,6 +1442,17 @@ native int MT_GetMinType();
 native void MT_GetPropColors(int tank, int type, int &red, int &green, int &blue, int &alpha);
 
 /**
+ * Returns the recorded type of a Mutant Tank.
+ *
+ * @param tank			Client index of the Tank.
+ * @param type			Mutant Tank type. (Optional)
+ *
+ * @return			The Tank's recorded Mutant Tank type.
+ * @error			Invalid client index or client is not in-game.
+ **/
+native int MT_GetRecordedTankType(int tank, int type = 0);
+
+/**
  * Returns a Mutant Tank's run speed.
  *
  * @param tank			Client index of the Tank.
@@ -1458,12 +1475,14 @@ native float MT_GetScaledDamage(float damage);
  * Returns a Mutant Tank's spawn type.
  *
  * @param tank			Client index of the Tank.
+ * @param type			Mutant Tank type.
+ * @param specType		Special Infected type.
  *
  * @return			The spawn type of the Tank.
  * 					0 = Normal, 1 = Boss, 2 = Randomized, 3 = Transformation, 4 = Combined abilities
  * @error			Invalid client index, client is not in-game, or client is human.
  **/
-native int MT_GetSpawnType(int tank);
+native int MT_GetSpawnType(int tank, int type = 0, int specType = 0);
 
 /**
  * Returns the RGB colors given to a Mutant Tank.
@@ -1493,11 +1512,12 @@ native void MT_GetTankName(int tank, char[] buffer);
  * Returns the type of a Mutant Tank.
  *
  * @param tank			Client index of the Tank.
+ * @param type			Recorded Mutant Tank type. (Optional)
  *
  * @return			The Tank's Mutant Tank type.
  * @error			Invalid client index or client is not in-game.
  **/
-native int MT_GetTankType(int tank);
+native int MT_GetTankType(int tank, int type = 0);
 
 /**
  * Returns if a human player has access to a Mutant Tank type.
@@ -1513,11 +1533,12 @@ native bool MT_HasAdminAccess(int admin);
  * Returns if a certain Mutant Tank type has a chance of spawning.
  *
  * @param type			Mutant Tank type.
+ * @param tank			Client index of the Tank.
  *
  * @return			True if the type has a chance of spawning, false otherwise.
  * @error			Type is 0 or less.
  **/
-native bool MT_HasChanceToSpawn(int type);
+native bool MT_HasChanceToSpawn(int type, int tank);
 
 /**
  * Hooks/unhooks any entity to/from the core plugin's SetTransmit callback.
@@ -1562,11 +1583,12 @@ native bool MT_IsCustomTankSupported(int tank);
  * Returns if a certain Mutant Tank type is only available on finale maps.
  *
  * @param type			Mutant Tank type.
+ * @param tank			Client index of the Tank.
  *
  * @return			True if the type is available, false otherwise.
  * @error			Type is 0 or less.
  **/
-native bool MT_IsFinaleType(int type);
+native bool MT_IsFinaleType(int type, int tank);
 
 /**
  * Returns if a Mutant Tank type has a glow outline.
@@ -1592,11 +1614,12 @@ native bool MT_IsGlowFlashing(int tank);
  * Returns if a certain Mutant Tank type is only available on non-finale maps.
  *
  * @param type			Mutant Tank type.
+ * @param tank			Client index of the Tank.
  *
  * @return			True if the type is available, false otherwise.
  * @error			Type is 0 or less.
  **/
-native bool MT_IsNonFinaleType(int type);
+native bool MT_IsNonFinaleType(int type, int tank);
 
 /**
  * Returns if a Tank is idle.
@@ -1627,11 +1650,12 @@ native bool MT_IsTankSupported(int tank, int flags = MT_CHECK_INDEX|MT_CHECK_ING
  * Returns if a certain Mutant Tank type is enabled.
  *
  * @param type			Mutant Tank type.
+ * @param tank			Client index of the Tank.
  *
  * @return			True if the type is enabled, false otherwise.
  * @error			Type is 0 or less.
  **/
-native bool MT_IsTypeEnabled(int type);
+native bool MT_IsTypeEnabled(int type, int tank);
 
 /**
  * Logs a message.
@@ -1795,6 +1819,15 @@ stock void MT_PrintToChatAll(const char[] message, any ...)
 	}
 }
 
+stock void MT_PrintToConsole(int client, const char[] message, any ...)
+{
+	char sBuffer[1024];
+	SetGlobalTransTarget(client);
+	VFormat(sBuffer, sizeof sBuffer, message, 3);
+	MT_ReplaceChatPlaceholders(sBuffer, sizeof sBuffer, true);
+	PrintToConsole(client, sBuffer);
+}
+
 stock void MT_PrintToServer(const char[] message, any ...)
 {
 	char sBuffer[1024];
@@ -1852,17 +1885,23 @@ stock void MT_ReplyToCommand(int client, const char[] message, any ...)
 
 stock void MT_TE_SetupParticleAttachment(int particle, int attachment, int entity, bool follow = false)
 {
-	float flDummy[3] = {0.0, 0.0, 0.0};
-	bool bSecondGame = bIsSecondGame();
+	static bool bSecondGame = false;
+	static EngineVersion evEngine = Engine_Unknown;
+	if (evEngine == Engine_Unknown)
+	{
+		evEngine = GetEngineVersion();
+		bSecondGame = (evEngine == Engine_Left4Dead2);
+	}
 
 	TE_Start("EffectDispatch");
 
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.x" : "m_vStart[0]"), flDummy[0]);
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.y" : "m_vStart[1]"), flDummy[1]);
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.z" : "m_vStart[2]"), flDummy[2]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.x" : "m_vOrigin[0]"), flDummy[0]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.y" : "m_vOrigin[1]"), flDummy[1]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.z" : "m_vOrigin[2]"), flDummy[2]);
+	static float flDummy[3] = {0.0, 0.0, 0.0};
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.x" : "m_vOrigin[0]"), flDummy[0]);
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.y" : "m_vOrigin[1]"), flDummy[1]);
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.z" : "m_vOrigin[2]"), flDummy[2]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.x" : "m_vStart[0]"), flDummy[0]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.y" : "m_vStart[1]"), flDummy[1]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.z" : "m_vStart[2]"), flDummy[2]);
 
 	static int iEffect = INVALID_STRING_INDEX;
 	if (iEffect < 0)
@@ -1886,29 +1925,35 @@ stock void MT_TE_SetupParticleAttachment(int particle, int attachment, int entit
 
 	switch (bSecondGame)
 	{
-		case true: TE_WriteNum("m_nDamageType", (bFollow ? 5 : 4));
-		case false: TE_WriteNum("m_nDamageType", (bFollow ? 4 : 3));
+		case true: TE_WriteNum("m_nDamageType", (follow ? 5 : 4));
+		case false: TE_WriteNum("m_nDamageType", (follow ? 4 : 3));
 	}
 }
 
 stock void MT_TE_SetupStopAllParticles(int entity)
 {
-	float flDummy[3] = {0.0, 0.0, 0.0};
-	bool bSecondGame = bIsSecondGame();
+	static bool bSecondGame = false;
+	static EngineVersion evEngine = Engine_Unknown;
+	if (evEngine == Engine_Unknown)
+	{
+		evEngine = GetEngineVersion();
+		bSecondGame = (evEngine == Engine_Left4Dead2);
+	}
 
 	TE_Start("EffectDispatch");
 
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.x" : "m_vStart[0]"), flDummy[0]);
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.y" : "m_vStart[1]"), flDummy[1]);
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.z" : "m_vStart[2]"), flDummy[2]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.x" : "m_vOrigin[0]"), flDummy[0]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.y" : "m_vOrigin[1]"), flDummy[1]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.z" : "m_vOrigin[2]"), flDummy[2]);
+	static float flDummy[3] = {0.0, 0.0, 0.0};
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.x" : "m_vOrigin[0]"), flDummy[0]);
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.y" : "m_vOrigin[1]"), flDummy[1]);
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.z" : "m_vOrigin[2]"), flDummy[2]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.x" : "m_vStart[0]"), flDummy[0]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.y" : "m_vStart[1]"), flDummy[1]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.z" : "m_vStart[2]"), flDummy[2]);
 
 	static int iEffect = INVALID_STRING_INDEX;
 	if (iEffect < 0)
 	{
-		iEffect = MT_FindStringIndex(FindStringTable("EffectDispatch"), "ParticleEffect");
+		iEffect = MT_FindStringIndex(FindStringTable("EffectDispatch"), "ParticleEffectStop");
 		if (iEffect == INVALID_STRING_INDEX)
 		{
 			return;
@@ -1925,6 +1970,17 @@ stock void MT_TE_SetupStopAllParticles(int entity)
 	TE_WriteFloat("m_flScale", 0.0);
 	TE_WriteFloat("m_flRadius", 0.0);
 	TE_WriteNum("m_nDamageType", 0);
+}
+
+stock void MT_TeleportPlayerAhead(int player, const float origin[3], const float angles[3], const float velocity[3], const float direction[3], const float distance)
+{
+	float flPos[3];
+	flPos[0] = origin[0] + (direction[0] * distance);
+	flPos[1] = origin[1] + (direction[1] * distance);
+	flPos[2] = origin[2];
+
+	TeleportEntity(player, flPos, angles, velocity);
+	vFixPlayerPosition(player, false);
 }
 
 stock void MT_UnloadPlugin(Handle plugin = null)
@@ -1956,15 +2012,22 @@ stock bool MT_FileExists(const char[] folder, const char[] filename, const char[
 
 stock bool MT_TE_CreateParticle(float startPos[3] = {0.0, 0.0, 0.0}, float endPos[3] = {0.0, 0.0, 0.0}, int particle = -1, int entity = 0, float delay = 0.0, bool all = true, char name[64] = "", int attachment = 0, float angles[3] = {0.0, 0.0, 0.0}, int flags = 0, int damageType = 0, float magnitude = 0.0, float scale = 1.0, float radius = 0.0)
 {
+	static bool bSecondGame = false;
+	static EngineVersion evEngine = Engine_Unknown;
+	if (evEngine == Engine_Unknown)
+	{
+		evEngine = GetEngineVersion();
+		bSecondGame = (evEngine == Engine_Left4Dead2);
+	}
+
 	TE_Start("EffectDispatch");
 
-	bool bSecondGame = bIsSecondGame();
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.x" : "m_vStart[0]"), startPos[0]);
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.y" : "m_vStart[1]"), startPos[1]);
-	TE_WriteFloat((bSecondGame ? "m_vOrigin.z" : "m_vStart[2]"), startPos[2]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.x" : "m_vOrigin[0]"), endPos[0]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.y" : "m_vOrigin[1]"), endPos[1]);
-	TE_WriteFloat((bSecondGame ? "m_vStart.z" : "m_vOrigin[2]"), endPos[2]);
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.x" : "m_vOrigin[0]"), startPos[0]);
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.y" : "m_vOrigin[1]"), startPos[1]);
+	TE_WriteFloat((bSecondGame ? "m_vOrigin.z" : "m_vOrigin[2]"), startPos[2]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.x" : "m_vStart[0]"), endPos[0]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.y" : "m_vStart[1]"), endPos[1]);
+	TE_WriteFloat((bSecondGame ? "m_vStart.z" : "m_vStart[2]"), endPos[2]);
 
 	static int iEffect = INVALID_STRING_INDEX;
 	if (iEffect < 0)
@@ -2013,7 +2076,7 @@ stock bool MT_TE_CreateParticle(float startPos[3] = {0.0, 0.0, 0.0}, float endPo
 
 stock float MT_GetRandomFloat(float min, float max)
 {
-	return ((GetURandomFloat() * (max - min + 1)) + min);
+	return (GetURandomFloat() * (max - min)) + min;
 }
 
 stock int MT_AddCommasToFloat(float number, char[] output, int size)
@@ -2126,7 +2189,7 @@ stock int MT_GetParticleIndex(const char[] particlename)
 
 stock int MT_GetRandomInt(int min, int max)
 {
-	return (RoundToFloor(GetURandomFloat() * (max - min + 1)) + min);
+	return RoundToNearest(GetURandomFloat() * float(max - min)) + min;
 }
 ```
 </details>
@@ -2140,13 +2203,24 @@ stock int MT_GetRandomInt(int min, int max)
 @spitters
 @jockeys
 @chargers
-@witches
 @tanks
 @special
 @infected
 @mutants
 @mtanks
 @psytanks
+@msmokers
+@psysmokers
+@mboomers
+@psyboomers
+@mhunters
+@psyhunters
+@mspitters
+@psyspitters
+@mjockeys
+@psyjockeys
+@mchargers
+@psychargers
 ```
 </details>
 <details>
@@ -2539,7 +2613,7 @@ Whatever each button activates is entirely up to your configuration settings.
 
 4. How do I change the buttons or add extra buttons?
 
-Edit lines `101-104` of the `mutant_tanks.inc` file and recompile each ability plugin.
+Edit lines `104-107` of the `mutant_tanks.inc` file and recompile each ability plugin.
 </details>
 <details>
 	<summary>Question 5</summary>
@@ -2763,6 +2837,10 @@ Set the values in `Execute Config Types`.
 
 **Erreur 500** - For the [[ANY] Stuck](https://forums.alliedmods.net/showthread.php?t=243151) plugin.
 
+**Xutax_Kamay** - For the [[ANY] Hit Registration Fix Plugin (bullet displacement by 1 tick)](https://forums.alliedmods.net/showthread.php?t=315405) plugin.
+
+**Carl Sagan** - For the [[L4D2] Tank Rush 2](https://forums.alliedmods.net/showthread.php?t=234840) plugin.
+
 **Silvers (Silvershot)** - For his plugins which make good references, helping with gamedata signatures, and helping to optimize/fix various parts of the code.
 
 **epz/epzminion** - For helping with gamedata signatures, offsets, addresses, and invaluable input.
@@ -2791,11 +2869,11 @@ Set the values in `Execute Config Types`.
 
 **emsit** - For reporting issues, helping with parts of the code, and suggesting ideas.
 
-**ReCreator, SilentBr, Neptunia, Zytheus, huwong, Tank Rush, Tonblader, TheStarRocker, Maku, Shadowart, saberQAQ, Shao, xcd222** - For reporting issues and suggesting ideas.
+**ReCreator, SilentBr, Neptunia, Zytheus, huwong, Tank Rush, Tonblader, TheStarRocker, Maku, Shadowart, moschinovac, saberQAQ, Shao, xcd222, PVNDV, SpannerV2** - For reporting issues and suggesting ideas.
 
-**Princess LadyRain, Nekrob, fig101, BloodyBlade, user2000, MedicDTI, ben12398, AK978, ricksfishin, Voevoda, ur5efj, What, moekai, weffer, AlexAlcala, ddd123, GL_INS, Slaven555, Neki93, kot4404, KadabraZz, Krufftys Killers, thewintersoldier97, Balloons, George Rex, swofleswof** - For reporting issues.
+**Princess LadyRain, Nekrob, fig101, BloodyBlade, user2000, MedicDTI, ben12398, AK978, ricksfishin, Voevoda, ur5efj, What, moekai, weffer, AlexAlcala, ddd123, GL_INS, Slaven555, Neki93, kot4404, KadabraZz, Krufftys Killers, thewintersoldier97, Balloons, George Rex, swofleswof, bedildewo** - For reporting issues.
 
-**Electr000999, foquaxticity, foxhound27, sxslmk, FatalOE71, zaviier, RDiver, BHaType, HarryPotter, jeremyvillanueva, DonProof, XXrevoltadoXX, XYZC, moschinovac, JustMadMan, DARG367, zonbarbar** - For suggesting ideas.
+**Electr000999, foquaxticity, foxhound27, sxslmk, FatalOE71, zaviier, RDiver, BHaType, HarryPotter, jeremyvillanueva, DonProof, XXrevoltadoXX, XYZC, JustMadMan, DARG367, zonbarbar, Unfellowed** - For suggesting ideas.
 
 **Marttt** - For helping with many things and the pull requests.
 

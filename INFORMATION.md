@@ -6,9 +6,12 @@
 	<summary>Click to expand!</summary>
 
 - Visit the [`Wiki`](https://github.com/Psykotikism/Mutant_Tanks/wiki) for more information, including examples and/or tutorials.
-- Maximum Tank health: `1,000,000` (Increase/decrease the value in the `mutant_tanks.inc` file on lines `97-98` and recompile all the plugins, but expect game-breaking bugs with higher values.) [Default: `65,535`]
-- Maximum types: `500` (Increase/decrease the value in the `mutant_tanks.inc` file on line `96` and recompile all the plugins, but expect server lag with higher values.)
+- Maximum Tank health: `1,000,000` (Increase/decrease the value in the `mutant_tanks.inc` file on lines `100-101` and recompile all the plugins, but expect game-breaking bugs with higher values.) [Default: `65,535`]
+- Maximum types: `500` (Increase/decrease the value in the `mutant_tanks.inc` file on line `99` and recompile all the plugins, but expect server lag with higher values.)
 - Most of these settings can be overridden for each player via their Steam IDs.
+- Most of these settings can be overridden for the other special infected (except the Witch).
+- Almost every setting can be set to `-1/-1.0` to allow settings with the same name to override it.
+- Almost every setting can be set to `0/0.0` to disable it and prevent overrides.
 </details>
 
 ## List of Contents
@@ -24,11 +27,13 @@
 	- Competitive
 	- Difficulty
 	- Health
+	- Protection
 	- Enhancements
 	- Immunities
 	- Administration
 	- Human Support
 	- Waves
+	- Rush
 	- ConVars
 	- Game Modes
 	- Custom
@@ -53,6 +58,7 @@
 	- Props
 	- Particles
 	- Health
+	- Protection
 	- Enhancements
 	- Immunities
 </details>
@@ -117,6 +123,7 @@
 	- [Puke](#puke-ability)
 	- [Pyro](#pyro-ability)
 	- [Quiet](#quiet-ability)
+	- [Recall](#recall-ability)
 	- [Recoil](#recoil-ability)
 	- [Regen](#regen-ability)
 	- [Respawn](#respawn-ability)
@@ -191,6 +198,23 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Auto Update"				"0"
 
+			// Attempt to fix hit registration issues.
+			// Note: Disable this setting if you are experiencing hit registration issues while this is enabled.
+			// Note: This setting replicates Xutax_Kamay's "Hit Registration Fix Plugin (bullet displacement by 1 tick)" plugin. Disable this setting if you already use that plugin.
+			// Link: https://forums.alliedmods.net/showthread.php?t=315405
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Bullet Fix"				"1"
+
+			// Kick Mutant Infected as soon as they die.
+			// Note: Both games usually wait around 5 seconds by default before kicking infected bots.
+			// Note: Do not change this setting if you are unsure of how it works.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Kick Bots"				"0"
+
 			// Enable Mutant Tanks on listen servers.
 			// Note: This setting has a convar equivalent (mt_listensupport).
 			// Note: Supporting listen servers only extends to SourceMod's own limits.
@@ -230,6 +254,7 @@
 			"Finales Only"				"0"
 
 			// Check if Mutant Tanks are idle every time this many seconds passes and kill them if idle.
+			// Note: This does not work for Mutant Special Infected because they do not go idle.
 			// Note: It is recommended to use this in finale stage configs only since idle Tanks can prevent finales from ending.
 			// Note: On non-finale maps, Tanks are only idle until survivors finally encounter them, but Tanks with no behavior can spawn on any map.
 			// Note: Do not change this setting if you are unsure of how it works.
@@ -240,6 +265,7 @@
 			"Idle Check"				"10.0"
 
 			// The type of idle mode to check for.
+			// Note: This does not work for Mutant Special Infected because they do not go idle.
 			// Note: It is recommended to set this to "2" on non-finale maps and "0" on finale maps.
 			// Note: There is a rare bug where a Tank spawns with no behavior even though they look "idle" to survivors. Set this setting to "0" or "2" to detect this bug.
 			// Note: Do not change this setting if you are unsure of how it works.
@@ -259,7 +285,7 @@
 			// --
 			// 0: OFF
 			// 1: "sm_tank"/"sm_mt_tank"
-			// 2: "sm_mt_config"
+			// 2: "sm_mt_config"/"sm_mt_edit"
 			// 4: "sm_mt_list"
 			// 8: "sm_mt_reload"
 			// 16: "sm_mt_version"
@@ -331,6 +357,20 @@
 			// 0.01-1.0: Burn percentage
 			"Burnt Skin"				"-1.0"
 
+			// Attempt to spawn different Mutant Tank types before spawning the same ones on the same maps.
+			// Note: The cycle resets when there are no unique Mutant Tank types left to choose from.
+			// Note: Do not change this setting if you are unsure of how it works.
+			// --
+			// Minimum: 0
+			// Maximum: 4
+			// --
+			// 0: OFF
+			// 1: Cycle through every available type randomly before reusing the same types on each map.
+			// 2: Cycle through every available type randomly before reusing the same types on each campaign.
+			// 3: Cycle through every available type in order before reusing the same types on each map.
+			// 4: Cycle through every available type in order before reusing the same types on each campaign.
+			"Cycle Types"				"0"
+
 			// All Mutant Tanks can spawn.
 			// Note: Mutant Tanks will still appear on the Mutant Tanks menu and other Mutant Tanks can still transform into each other.
 			// Note: Do not change this setting if you are unsure of how it works.
@@ -372,6 +412,57 @@
 			// 0: OFF, use standard Tanks.
 			// 1-500: ON, the type that will spawn.
 			"Type Range"				"1-500"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "General" section for each special infected here.
+
+				// Enable all Mutant Special Infected types.
+				// Note: This setting determines full availability. Even if other spawn settings are enabled while this is disabled, all Mutant Special Infected types will stay disabled.
+				// Note: This setting can be overridden for each Mutant Special Infected under the "General" section of their settings.
+				// --
+				// Add up numbers together for different results.
+				// --
+				// Minimum: -1
+				// Maximum: 63
+				// --
+				// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each Mutant Special Infected's "General" section decide.
+				// 0/"disabled"/"false"/"off"/"no": OFF
+				// 1: Enable Smokers.
+				// 2: Enable Boomers.
+				// 4: Enable Hunters.
+				// 8: Enable Spitters. (Only available in Left 4 Dead 2.)
+				// 16: Enable Jockeys. (Only available in Left 4 Dead 2.)
+				// 32: Enable Chargers. (Only available in Left 4 Dead 2.)
+				"Special Types"				"-1"
+
+				// The model used by all Mutant Special Infected.
+				// Note: This setting only works for the Smoker, Boomer, and Hunter.
+				// Note: This setting can be used for standard Special Infected.
+				// Note: This setting can be overridden for each Mutant Special Infected under the "General" section of their settings.
+				// --
+				// Add up numbers together for different results.
+				// --
+				// Minimum: 0
+				// Maximum: 3
+				// --
+				// 0: OFF (Let the game decide.)
+				// 1: Default model
+				// 2: L4D1 model (Only available in Left 4 Dead 2.)
+				"Special Model"				"0"
+
+				// Example
+				"Death Revert"				"1"
+				"Finales Only"				"0"
+				"Requires Humans"			"0"
+				"Special Types"				"-1"
+				"Special Model"				"0"
+				"Burn Duration"				"0.0"
+				"Burnt Skin"				"-1.0"
+				"Cycle Types"				"0"
+				"Spawn Enabled"				"-1"
+				"Type Range"				"1-500"
+			}
 		}
 		"Announcements"
 		{
@@ -381,9 +472,10 @@
 			// --
 			// Add up numbers together for different results.
 			// --
-			// Minimum: 0
+			// Minimum: -1
 			// Maximum: 31
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each Mutant Tank's "Announcements" section decide.
 			// 0: OFF
 			// 1: Announce when a Mutant Tank spawns.
 			// 2: Announce when a Mutant Tank evolves. (Only works when "Spawn Type" is set to "1".)
@@ -396,6 +488,7 @@
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Announcements" section of their settings.
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each Mutant Tank's "Announcements" section decide.
 			// 0: OFF
 			// 1: ON, announce deaths only.
 			// 2: ON, announce deaths with killers.
@@ -405,6 +498,7 @@
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Announcements" section of their settings.
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each Mutant Tank's "Announcements" section decide.
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Announce Kill"				"1"
@@ -436,6 +530,7 @@
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Announcements" section of their settings.
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each Mutant Tank's "Announcements" section decide.
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Arrival Sound"				"1"
@@ -478,6 +573,7 @@
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Announcements" section of their settings.
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each Mutant Tank's "Announcements" section decide.
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Death Sound"				"1"
@@ -508,6 +604,7 @@
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Announcements" section of their settings.
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each Mutant Tank's "Announcements" section decide.
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Vocalize Arrival"			"1"
@@ -516,9 +613,28 @@
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Announcements" section of their settings.
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each Mutant Tank's "Announcements" section decide.
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Vocalize Death"			"1"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Announcements" section for each special infected here.
+
+				// Example
+				"Announce Arrival"			"31"
+				"Announce Death"			"1"
+				"Announce Kill"				"1"
+				"Arrival Message"			"0"
+				"Arrival Sound"				"1"
+				"Death Details"				"5"
+				"Death Message"				"0"
+				"Death Sound"				"1"
+				"Kill Message"				"0"
+				"Vocalize Arrival"			"1"
+				"Vocalize Death"			"1"
+			}
 		}
 		"Colors"
 		{
@@ -544,7 +660,7 @@
 			// Any duplicates will overwrite previous entries.
 			// This is just a shortcut method for changing colors.
 			// --
-			// Examples:
+			// Example:
 
 			// All Tanks will be red.
 			"all_tank_skins"			"255,0,0,255" // See "Skin Color" below.
@@ -583,12 +699,19 @@
 			// - Receive 100% temporary health after being revived.
 			// - Slowly regenerate back to full health.
 			// - Leech health off of any infected per melee hit.
+			// - Turn damage into health from self-made fires.
+			// - Turn damage into health from self-made explosions.
+			// - Heal teammates with bullets.
+			// - Heal teammates with melee hits.
 			// 2: Speed boost reward (temporary)
 			// - Run faster
 			// - Jump higher (Disables the death fall camera for recipients.)
 			// - Receive the adrenaline effect for the duration of the reward. (Only available in Left 4 Dead 2.)
 			// - Bunny hop consistently
+			// - Burst open doors
+			// - Throw sticky grenades that slow down special infected and mitigate their abilities.
 			// 4: Damage boost reward (temporary)
+			// - Laser sight
 			// - Inextinguishable fire
 			// - Extended pipebomb duration
 			// - Prevent dealing and receiving friendly-fire.
@@ -596,6 +719,7 @@
 			// - Bypass Tank immunities
 			// - Damage resistance
 			// - Automatically kill Witches.
+			// - Ghost bullets
 			// - Hollowpoint ammo
 			// - Extended melee range
 			// - Recoil dampener
@@ -609,9 +733,9 @@
 			// - Prevent switching to throwables and health supplies given by teammates.
 			// - Perform actions on ladders.
 			// - Bypass shove penalty.
-			// - Shoving Tanks does damage.
+			// - Shoving damages Tanks.
 			// - Faster shove interval
-			// - Faster shoot rate (guns)
+			// - Faster fire rate (guns)
 			// - Faster reload rate (guns)
 			// - Faster swing rate (melee)
 			// - Faster throw time (throwables)
@@ -622,17 +746,20 @@
 			// - Faster pour time (gas cans)
 			// - Faster delivery time (cola bottles)
 			// - Faster recovery time
+			// - Rapid-fire pistols
 			// 16: Ammo reward (temporary)
 			// - Refill clip to max size
 			// - Refill magazine to max size
 			// - Extra clip and magazine size
-			// - Receive one of the special ammo (incendiary or explosive). (Only available in Left 4 Dead 2.)
+			// - Receive one of the special ammo types (incendiary or explosive). (Only available in Left 4 Dead 2.)
 			// - Slowly regenerate back to full capacity.
+			// - Throw multiple pipe bombs at once (cluster bombs).
 			// 32: Item reward
 			// - Receive up to five items.
 			// 64: God mode reward (temporary)
 			// - Automatically prevent attacks from and kill all special infected attackers.
 			// - Immune to all types of damage.
+			// - Cannot be nudged by teammates.
 			// - Cannot be flung away by Chargers.
 			// - Cannot be pushed around.
 			// - Cannot be vomited on by Boomers.
@@ -685,12 +812,19 @@
 			// - Receive 100% temporary health after being revived.
 			// - Slowly regenerate back to full health.
 			// - Leech health off of any infected per melee hit.
+			// - Turn damage into health from self-made fires.
+			// - Turn damage into health from self-made explosions.
+			// - Heal teammates with bullets.
+			// - Heal teammates with melee hits.
 			// 2: Speed boost reward (temporary)
 			// - Run faster
 			// - Jump higher (Disables the death fall camera for recipients.)
 			// - Receive the adrenaline effect for the duration of the reward. (Only available in Left 4 Dead 2.)
 			// - Bunny hop consistently
+			// - Burst open doors
+			// - Throw sticky grenades that slow down special infected and mitigate their abilities.
 			// 4: Damage boost reward (temporary)
+			// - Laser sight
 			// - Inextinguishable fire
 			// - Extended pipebomb duration
 			// - Prevent dealing and receiving friendly-fire.
@@ -698,6 +832,7 @@
 			// - Bypass Tank immunities
 			// - Damage resistance
 			// - Automatically kill Witches.
+			// - Ghost bullets
 			// - Hollowpoint ammo
 			// - Extended melee range
 			// - Recoil dampener
@@ -711,9 +846,9 @@
 			// - Prevent switching to throwables and health supplies given by teammates.
 			// - Perform actions on ladders.
 			// - Bypass shove penalty.
-			// - Shoving Tanks does damage.
+			// - Shoving damages Tanks.
 			// - Faster shove interval
-			// - Faster shoot rate (guns)
+			// - Faster fire rate (guns)
 			// - Faster reload rate (guns)
 			// - Faster swing rate (melee)
 			// - Faster throw time (throwables)
@@ -724,17 +859,20 @@
 			// - Faster pour time (gas cans)
 			// - Faster delivery time (cola bottles)
 			// - Faster recovery time
+			// - Rapid-fire pistols
 			// 16: Ammo reward (temporary)
 			// - Refill clip to max size
 			// - Refill magazine to max size
 			// - Extra clip and magazine size
-			// - Receive one of the special ammo (incendiary or explosive). (Only available in Left 4 Dead 2.)
+			// - Receive one of the special ammo types (incendiary or explosive). (Only available in Left 4 Dead 2.)
 			// - Slowly regenerate back to full capacity.
+			// - Throw multiple pipe bombs at once (cluster bombs).
 			// 32: Item reward
 			// - Receive up to five items.
 			// 64: God mode reward (temporary)
 			// - Automatically prevent attacks from and kill all special infected attackers.
 			// - Immune to all types of damage.
+			// - Cannot be nudged by teammates.
 			// - Cannot be flung away by Chargers.
 			// - Cannot be pushed around.
 			// - Cannot be vomited on by Boomers.
@@ -1016,6 +1154,24 @@
 			// 4th number = Boost for assistant killers.
 			"Attack Boost Reward"			"1.25,1.25,1.25,1.25"
 
+			// Allow healing from self-made fires as a reward to survivors.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Allow healing from self-made fires to killers.
+			// 2nd number = Allow healing from self-made fires to assistants.
+			// 3rd number = Allow healing from self-made fires to teammates.
+			// 4th number = Allow healing from self-made fires to assistant killers.
+			"Blaze Health Reward"			"1,1,1,1"
+
 			// Allow bunnyhopping as a reward to survivors.
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
@@ -1070,6 +1226,24 @@
 			// 4th number = Give clean kills to assistant killers.
 			"Clean Kills Reward"			"1,1,1,1"
 
+			// Allow survivors to throw cluster bombs (multiple pipe bombs) as a reward.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 6
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 5 (Highest)
+			// --
+			// 1st number = Number of clustered pipe bombs to give to killers.
+			// 2nd number = Number of clustered pipe bombs to give to assistants.
+			// 3rd number = Number of clustered pipe bombs to give to teammates.
+			// 4th number = Number of clustered pipe bombs to give to assistant killers.
+			"Cluster Bombs Reward"			"3,3,3,3"
+
 			// The damage boost to reward to survivors.
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
@@ -1119,7 +1293,7 @@
 			// 2nd set = Fall voiceline for assistants.
 			// 3rd set = Fall voiceline for teammates.
 			// 4th set = Fall voiceline for assistant killers.
-			"Fall Voiceline Reward"			"PlayerLaugh,PlayerLaugh,PlayerLaugh"
+			"Fall Voiceline Reward"			"PlayerLaugh,PlayerLaugh,PlayerLaugh,PlayerLaugh"
 
 			// Give friendly-fire immunity as a reward to survivors.
 			// Note: This setting can be used for standard Tanks.
@@ -1138,6 +1312,24 @@
 			// 3rd number = Give immunity to teammates.
 			// 4th number = Give immunity to assistant killers.
 			"Friendly Fire Reward"			"1,1,1,1"
+
+			// Give ghost bullets as a reward to survivors.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Give ghost bullets to killers.
+			// 2nd number = Give ghost bullets to assistants.
+			// 3rd number = Give ghost bullets to teammates.
+			// 4th number = Give ghost bullets to assistant killers.
+			"Ghost Bullets Reward"			"1,1,1,1"
 
 			// The healing percentage from first aid kits to reward to survivors.
 			// Note: This setting can be used for standard Tanks.
@@ -1324,6 +1516,24 @@
 			// 4th number = Amount for assistant killers.
 			"Life Leech Reward"			"1,1,1,1"
 
+			// Allow healing teammates with melee hits as a reward to survivors.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Allow healing teammates with melee hits to killers.
+			// 2nd number = Allow healing teammates with melee hits to assistants.
+			// 3rd number = Allow healing teammates with melee hits to teammates.
+			// 4th number = Allow healing teammates with melee hits to assistant killers.
+			"Medical Incisions Reward"		"1,1,1,1"
+
 			// The melee range to reward to survivors.
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
@@ -1396,6 +1606,24 @@
 			// 4th number = Resistance for assistant killers.
 			"Punch Resistance Reward"		"0.25,0.25,0.25,0.25"
 
+			// The rapid pistol fire rate to reward to survivors.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
+			// --
+			// Separate resistances with commas (",").
+			// --
+			// Resistances limit: 4
+			// Character limit for each fire rate: 6
+			// --
+			// Minimum value for each resistance: 0.0 (OFF)
+			// Maximum value for each resistance: 1.0 (None)
+			// --
+			// 1st number = Rapid pistol fire rate for killers.
+			// 2nd number = Rapid pistol fire rate for assistants.
+			// 3rd number = Rapid pistol fire rate for teammates.
+			// 4th number = Rapid pistol fire rate for assistant killers.
+			"Rapid Pistol Reward"			"0.130,0.130,0.130,0.130"
+
 			// Give recoil dampener as a reward to survivors.
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
@@ -1431,6 +1659,24 @@
 			// 3rd number = Heal percentage for teammates.
 			// 4th number = Heal percentage for assistant killers.
 			"Refill Percent Reward"			"100.0,100.0,100.0,100.0"
+
+			// Allow healing from self-made explosions as a reward to survivors.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Allow healing from self-made explosions to killers.
+			// 2nd number = Allow healing from self-made explosions to assistants.
+			// 3rd number = Allow healing from self-made explosions to teammates.
+			// 4th number = Allow healing from self-made explosions to assistant killers.
+			"Regen Bursts Reward"			"1,1,1,1"
 
 			// Restore the previous loadouts of survivors after respawning them.
 			// Note: This setting can be used for standard Tanks.
@@ -1640,6 +1886,42 @@
 			// 3rd number = Stack rewards for teammates.
 			// 4th number = Stack rewards for assistant killers.
 			"Stack Rewards"				"0,0,0,0"
+
+			// Give sticky grenades as a reward to survivors.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Give sticky grenades to killers.
+			// 2nd number = Give sticky grenades to assistants.
+			// 3rd number = Give sticky grenades to teammates.
+			// 4th number = Give sticky grenades to assistant killers.
+			"Sticky Grenades Reward"		"1,1,1,1"
+
+			// Allow healing teammates with bullets as a reward to survivors.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Rewards" section of their settings.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Allow healing teammates with bullets to killers.
+			// 2nd number = Allow healing teammates with bullets to assistants.
+			// 3rd number = Allow healing teammates with bullets to teammates.
+			// 4th number = Allow healing teammates with bullets to assistant killers.
+			"Syringe Darts Reward"			"1,1,1,1"
 
 			// Give thorns as a reward to survivors.
 			// Note: This setting can be used for standard Tanks.
@@ -1869,6 +2151,76 @@
 			// 3rd number = Voice pitch for teammates.
 			// 4th number = Voice pitch for assistant killers.
 			"Voice Pitch Visual"			"100,100,100,100"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				"Reward Enabled"			"-1,-1,-1,-1"
+				"Reward Bots"				"-1,-1,-1,-1"
+				"Reward Chance"				"33.3,33.3,33.3,33.3"
+				"Reward Duration"			"10.0,10.0,10.0,10.0"
+				"Reward Effect"				"15,15,15,15"
+				"Reward Notify"				"3,3,3,3"
+				"Reward Percentage"			"10.0,10.0,10.0,10.0"
+				"Reward Visual"				"127,127,127,127" // Default is "63" on Left 4 Dead 1.
+				"Prefs Notify"				"1,1,1,1"
+				"Share Rewards"				"0,0,0,0"
+				"Teammate Limit"			"0"
+				"Action Duration Reward"		"2.0,2.0,2.0,2.0"
+				"Ammo Boost Reward"			"1,1,1,1"
+				"Ammo Regen Reward"			"1,1,1,1"
+				"Attack Boost Reward"			"1.25,1.25,1.25,1.25"
+				"Blaze Health Reward"			"1,1,1,1"
+				"Bunny Hop Reward"			"1,1,1,1"
+				"Burst Doors Reward"			"1,1,1,1"
+				"Clean Kills Reward"			"1,1,1,1"
+				"Cluster Bombs Reward"			"3,3,3,3"
+				"Damage Boost Reward"			"1.25,1.25,1.25,1.25"
+				"Damage Resistance Reward"		"0.5,0.5,0.5,0.5"
+				"Fall Voiceline Reward"			"PlayerLaugh,PlayerLaugh,PlayerLaugh,PlayerLaugh"
+				"Friendly Fire Reward"			"1,1,1,1"
+				"Ghost Bullets Reward"			"1,1,1,1"
+				"Heal Percent Reward"			"100.0,100.0,100.0,100.0"
+				"Health Regen Reward"			"1,1,1,1"
+				"Hollowpoint Ammo Reward"		"1,1,1,1"
+				"Inextinguishable Fire Reward"		"1,1,1,1"
+				"Infinite Ammo Reward"			"31,31,31,31"
+				"Item Reward"				"first_aid_kit,first_aid_kit,first_aid_kit,first_aid_kit"
+				"Jump Height Reward"			"75.0,75.0,75.0,75.0"
+				"Ladder Actions Reward"			"1,1,1,1"
+				"Lady Killer Reward"			"1,1,1,1"
+				"Life Leech Reward"			"1,1,1,1"
+				"Medical Incisions Reward"		"1,1,1,1"
+				"Melee Range Reward"			"100,100,100,100"
+				"Midair Dashes Reward"			"2,2,2,2"
+				"Pipebomb Duration Reward"		"10.0,10.0,10.0,10.0"
+				"Punch Resistance Reward"		"0.25,0.25,0.25,0.25"
+				"Rapid Pistol Reward"			"0.130,0.130,0.130,0.130"
+				"Recoil Dampener Reward"		"1,1,1,1"
+				"Refill Percent Reward"			"100.0,100.0,100.0,100.0"
+				"Regen Bursts Reward"			"1,1,1,1"
+				"Respawn Loadout Reward"		"1,1,1,1"
+				"Revive Health Reward"			"100,100,100,100"
+				"Shove Damage Reward"			"0.025,0.025,0.025,0.025"
+				"Shove Penalty Reward"			"1,1,1,1"
+				"Shove Rate Reward"			"0.7,0.7,0.7,0.7"
+				"Sledgehammer Rounds Reward"		"1,1,1,1"
+				"Special Ammo Reward"			"1,1,1,1"
+				"Speed Boost Reward"			"1.25,1.25,1.25,1.25"
+				"Stack Limits"				"0,0,0,0,0,0,0,0"
+				"Stack Rewards"				"0,0,0,0"
+				"Sticky Grenades Reward"		"1,1,1,1"
+				"Syringe Darts Reward"			"1,1,1,1"
+				"Thorns Reward"				"1,1,1,1"
+				"Useful Rewards"			"15,15,15,15"
+				"Body Color Visual"			"-1;-1;-1;-1,-1;-1;-1;-1,-1;-1;-1;-1,-1;-1;-1;-1"
+				"Glow Color Visual"			"-1;-1;-1,-1;-1;-1,-1;-1;-1,-1;-1;-1"
+				"Light Color Visual"			"-1;-1;-1;-1,-1;-1;-1;-1,-1;-1;-1;-1,-1;-1;-1;-1"
+				"Looping Voiceline Interval"		"10.0,10.0,10.0,10.0"
+				"Looping Voiceline Visual"		"PlayerDeath,PlayerDeath,PlayerDeath,PlayerDeath"
+				"Particle Effect Visual"		"15,15,15,15"
+				"Screen Color Visual"			"-1;-1;-1;-1,-1;-1;-1;-1,-1;-1;-1;-1,-1;-1;-1;-1"
+				"Voice Pitch Visual"			"100,100,100,100"
+			}
 		}
 		"Competitive"
 		{
@@ -2026,10 +2378,10 @@
 
 			// The health of Mutant Tanks is multiplied by this value.
 			// Note: Health = Health x Health percentage multiplier
-			// Example: Health = 4000 x 2.5 (10000)
+			// Example: Health = 4000 x 2.5 = 10000
 			// Note: Use the value "1.0" to disable this setting. (Health x 1.0 = Health)
 			// Note: This setting can be used for standard Tanks.
-			// Note: This setting can be overridden for each Mutant Tank under the "Enhancements" section of their settings.
+			// Note: This setting can be overridden for each Mutant Tank under the "Health" section of their settings.
 			// --
 			// Minimum: 1.0
 			// Maximum: 99999.0
@@ -2064,6 +2416,251 @@
 			// 2: Multiply extra health only.
 			// 3: Multiply both.
 			"Multiply Health"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Health" section for each special infected here.
+
+				// Base health given to all Mutant Boomers.
+				// Note: Boomer's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Boomer's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Boomers.
+				// Note: This setting can be overridden for each Mutant Boomer under the "Health" section of their settings.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Boomer Base Health"			"0"
+
+				// Extra health given to the Mutant Boomer.
+				// Note: Boomer's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Boomer's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Boomers.
+				// Note: This setting can be overridden for each Mutant Boomer under the "Health" section of their settings.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Boomer Extra Health"			"0"
+
+				// Base health given to all Mutant Chargers.
+				// Note: Charger's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Charger's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Chargers.
+				// Note: This setting can be overridden for each Mutant Charger under the "Health" section of their settings.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Charger Base Health"			"0"
+
+				// Extra health given to the Mutant Charger.
+				// Note: Charger's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Charger's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Chargers.
+				// Note: This setting can be overridden for each Mutant Charger under the "Health" section of their settings.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Charger Extra Health"			"0"
+
+				// Base health given to all Mutant Hunters.
+				// Note: Hunter's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Hunter's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Hunters.
+				// Note: This setting can be overridden for each Mutant Hunter under the "Health" section of their settings.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Hunter Base Health"			"0"
+
+				// Extra health given to the Mutant Hunter.
+				// Note: Hunter's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Hunter's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Hunters.
+				// Note: This setting can be overridden for each Mutant Hunter under the "Health" section of their settings.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Hunter Extra Health"			"0"
+
+				// Base health given to all Mutant Jockeys.
+				// Note: Jockey's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Jockey's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Jockeys.
+				// Note: This setting can be overridden for each Mutant Jockey under the "Health" section of their settings.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Jockey Base Health"			"0"
+
+				// Extra health given to the Mutant Jockey.
+				// Note: Jockey's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Jockey's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Jockeys.
+				// Note: This setting can be overridden for each Mutant Jockey under the "Health" section of their settings.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Jockey Extra Health"			"0"
+
+				// Base health given to all Mutant Smokers.
+				// Note: Smoker's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Smoker's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Smokers.
+				// Note: This setting can be overridden for each Mutant Smoker under the "Health" section of their settings.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Smoker Base Health"			"0"
+
+				// Extra health given to the Mutant Smoker.
+				// Note: Smoker's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Smoker's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Smokers.
+				// Note: This setting can be overridden for each Mutant Smoker under the "Health" section of their settings.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Smoker Extra Health"			"0"
+
+				// Base health given to all Mutant Spitters.
+				// Note: Spitter's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Spitter's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Spitters.
+				// Note: This setting can be overridden for each Mutant Spitter under the "Health" section of their settings.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Spitter Base Health"			"0"
+
+				// Extra health given to the Mutant Spitter.
+				// Note: Spitter's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Spitter's health will be multiplied based on player count.
+				// Note: This setting can be used for standard Spitters.
+				// Note: This setting can be overridden for each Mutant Spitter under the "Health" section of their settings.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Spitter Extra Health"			"0"
+
+				// Example
+				"Boomer Base Health"			"0"
+				"Charger Base Health"			"0"
+				"Hunter Base Health"			"0"
+				"Jockey Base Health"			"0"
+				"Smoker Base Health"			"0"
+				"Spitter Base Health"			"0"
+				"Display Health"			"11"
+				"Boomer Extra Health"			"0"
+				"Charger Extra Health"			"0"
+				"Hunter Extra Health"			"0"
+				"Jockey Extra Health"			"0"
+				"Smoker Extra Health"			"0"
+				"Spitter Extra Health"			"0"
+				"Display Health Type"			"0"
+				"Health Characters"			"|,-"
+				"Health Percentage Multiplier"		"1.0"
+				"Human Multiplier Mode"			"0"
+				"Minimum Humans"			"2"
+				"Multiply Health"			"0"
+			}
+		}
+		"Protection"
+		{
+			// The Mutant Tank will have spawn protection for a limited time.
+			// Note: Do not change this setting if you are unsure of how it works.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Protection" section of their settings.
+			// --
+			// 0: OFF
+			// 1: Spawn with a temporary shield.
+			// 2: Spawn with temporary armor.
+			// 3: Both
+			"Spawn Protection"			"0"
+
+			// The duration of the Mutant Tank's armor for spawn protection.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Protection" section of their settings.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Armor Duration"			"3.0"
+
+			// The Mutant Tank's armor blocks this percentage of incoming damage.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Protection" section of their settings.
+			// --
+			// Minimum: 0.0 (God mode)
+			// Maximum: 1.0 (None)
+			"Armor Resistance"			"0.75"
+
+			// The duration of the Mutant Tank's shield for spawn protection.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Protection" section of their settings.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Shield Duration"			"1.0"
+
+			// The Mutant Tank's shield blocks this percentage of incoming damage.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Protection" section of their settings.
+			// --
+			// Minimum: 0.0 (God mode)
+			// Maximum: 1.0 (None)
+			"Shield Resistance"			"0.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Protection" section for each special infected here.
+
+				// Example
+				"Spawn Protection"			"0"
+				"Armor Duration"			"3.0"
+				"Armor Resistance"			"0.75"
+				"Shield Duration"			"1.0"
+				"Shield Resistance"			"0.0"
+			}
 		}
 		"Enhancements"
 		{
@@ -2130,7 +2727,7 @@
 
 			// The damage received by incapacitated survivors from the Mutant Tank is multiplied by this value.
 			// Note: Damage = Damage x Incap damage multiplier
-			// Example: Damage = 30.0 x 1.5 (45.0)
+			// Example: Damage = 30.0 x 1.5 = 45.0
 			// Note: Use the value "1.0" to disable this setting. (Damage x 1.0 = Damage)
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Enhancements" section of their settings.
@@ -2138,6 +2735,40 @@
 			// Minimum: 1.0
 			// Maximum: 99999.0
 			"Incap Damage Multiplier"		"1.0"
+
+			// Every Mutant Tank becomes intangible while alive.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Enhancements" section of their settings.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Intangible Body"			"0"
+
+			// The mode of how melee hits affect every Mutant Tank.
+			// Note: If set to "1" then the formula is Damage = Max health x Melee hit value
+			// Example: Damage = 5000.0 x 0.05 = 250.0
+			// Note: If set to "2" then the formula is Damage = Melee hit value
+			// Example: Damage = 500.0
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Enhancements" section of their settings.
+			// --
+			// 0: OFF
+			// 1: ON, melee hits deal damage based on a percentage of the Mutant Tank's max health.
+			// 2: ON, melee hits deal damage based on a certain amount.
+			"Melee Hit Mode"			"0"
+
+			// The value of melee hits against every Mutant Tank.
+			// Note: The value of the "Melee Hit Mode" setting determines how the value of this setting is applied.
+			// Note: If "Melee Hit Mode" is set to "1" use values between "0.0" and "1.0".
+			// Example: 0.05
+			// Note: If "Melee Hit Mode" is set to "2" use values between "0.0" and "99999.0".
+			// Example: 500.0
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Enhancements" section of their settings.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0 (Strongest)
+			"Melee Hit Value"			"0.0"
 
 			// Every Mutant Tank's punches have this much force.
 			// Note: This setting can be used for standard Tanks.
@@ -2198,7 +2829,7 @@
 			// --
 			// OFF: 0.0
 			// Minimum: 0.1
-			// Maximum: 3.0
+			// Maximum: 99.0
 			"Run Speed"				"0.0"
 
 			// Skip every Mutant Tank's dying animation.
@@ -2209,8 +2840,7 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Skip Incap"				"0"
 
-			// Skip every Mutant Tank's taunting animation after incapacitating survivors.
-			// Note: Only available in Left 4 Dead 2.
+			// Skip every Mutant Tank's taunting animation after incapacitating survivors and when climbing.
 			// Note: This setting can be used for standard Tanks.
 			// Note: This setting can be overridden for each Mutant Tank under the "Enhancements" section of their settings.
 			// --
@@ -2241,6 +2871,63 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Throw Interval"			"0.0"
+
+			// Every Mutant Tank throws a rock when using its rock throw ability.
+			// Note: This just throws a second rock for every Tank.
+			// Note: This can disrupt the default ability or free the survivor victim of every Charger/Hunter/Jockey/Smoker.
+			// Note: Do not change this setting if you want to preserve the default abilities of every Charger/Hunter/Jockey/Smoker.
+			// Note: This setting can be used for standard Tanks.
+			// Note: This setting can be overridden for each Mutant Tank under the "Enhancements" section of their settings.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Throw Rock"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Enhancements" section for each special infected here.
+
+				// Every Mutant Special Infected's pins (Smoker grab, Hunter pounce, Jockey ride, Charger impact) do this much damage.
+				// Note: This setting can be used for standard Special Infected.
+				// Note: This setting can be overridden for each Mutant Special Infected under the "Enhancements" section of their settings.
+				// --
+				// OFF: -1.0
+				// Minimum: 0.0
+				// Maximum: 99999.0
+				// --
+				// Keywords:
+				// "nodmg"/"friendly"/"harmless" - 0.0 damage
+				// "weakest" - 1.0 damage
+				// "strongest" - 99999.0 damage
+				"Pin Damage"				"-1.0"
+
+				// Every Mutant Special Infected uses their special ability every time this many seconds passes.
+				// Note: This setting can be used for standard Special Infected.
+				// Note: This setting can be overridden for each Mutant Special Infected under the "Enhancements" section of their settings.
+				// --
+				// OFF: 0.0
+				// Minimum: 0.1
+				// Maximum: 99999.0
+				// --
+				// Keywords:
+				// "milli"/"millisecond" - 0.1 seconds
+				// "second" - 1 second
+				// "minute" - 1 minute
+				// "forever" - 99999 seconds
+				"Special Interval"			"0.0"
+
+				// Example
+				"Attack Interval"			"0.0"
+				"Claw Damage"				"-1.0"
+				"Incap Damage Multiplier"		"1.0"
+				"Intangible Body"			"0"
+				"Melee Hit Mode"			"0"
+				"Melee Hit Value"			"0.0"
+				"Pin Damage"				"-1.0"
+				"Run Speed"				"0.0"
+				"Special Interval"			"0.0"
+				"Throw Rock"				"0"
+			}
 		}
 		"Immunities"
 		{
@@ -2291,6 +2978,19 @@
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Vomit Immunity"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Immunities" section for each special infected here.
+
+				// Example
+				"Bullet Immunity"			"0"
+				"Explosive Immunity"			"0"
+				"Fire Immunity"				"0"
+				"Hittable Immunity"			"0"
+				"Melee Immunity"			"0"
+				"Vomit Immunity"			"0"
+			}
 		}
 		"Administration"
 		{
@@ -2518,6 +3218,106 @@
 			// 1-32: ON, the number of Tanks that will spawn.
 			"Finale Waves"				"0,0,0,0,0,0,0,0,0,0,0"
 		}
+		"Rush"
+		{
+			// Enable Tank Rush mode.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 127
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1: Tank Rush - Tanks only
+			// 2: Gas Chamber - Smokers only
+			// 4: Vomit Vault - Boomers only
+			// 8: Hunting Ground - Hunters only
+			// 16: Acid Rain - Spitters only (Only available in Left 4 Dead 2.)
+			// 32: Mental Asylum - Jockeys only (Only available in Left 4 Dead 2.)
+			// 64: Meat Grinder - Chargers only (Only available in Left 4 Dead 2.)
+			"Rush Types"				"0"
+
+			// The number of common infected that can be alive at any given time.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 100
+			"Common Limit"				"0"
+
+			// The delay in seconds before Tanks start spawning in co-op modes.
+			// Note: The delay starts after a survivor leaves the saferoom.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Coop Delay"				"60.0"
+
+			// The time in seconds for resting periods during finales.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Finale Cooldown"			"30.0"
+
+			// Enable hardcore mode.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Hardcore Mode"				"0"
+
+			// The survivors get healed after killing a Tank.
+			// --
+			// 0: OFF
+			// 1: ON, heal all alive survivors.
+			// 2: ON, heal only the lowest health survivor.
+			"Health Kills"				"2"
+
+			// The time in seconds that Tanks have to kill survivors.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Kill Countdown"			"240.0"
+
+			// The number of Tanks that can be alive at any given time.
+			// Note: Clones, respawned Mutant Tanks, randomized Tanks, and Mutant Tanks spawned through the Mutant Tanks menu are not affected.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 32
+			"Rush Limit"				"10"
+
+			// Spawn Tanks every time this many seconds passes.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Spawn Interval"			"6.0"
+
+			// The number of times each survivor can be incapacitated before they become black and white.
+			// --
+			// 0: OFF, use game default.
+			// 1-10: ON, the number of times each survivor can be incapacitated.
+			"Survivor Incaps"			"4"
+		}
 		"ConVars"
 		{
 			// All convars (except the ones provided by Mutant Tanks) can be modified in this section.
@@ -2607,7 +3407,7 @@
 			// 128: Finale stages
 			"Create Config Types"			"0"
 
-			// The delay for executing a custom config when its filestamp has changed.
+			// The delay in seconds for executing a custom config when its filestamp has changed.
 			// Note: Do not change this setting if you are unsure of how it works.
 			// Note: This setting cannot be changed in custom config files.
 			// --
@@ -2687,6 +3487,7 @@
 
 			// The Mutant Tank has this many chances out of 100.0% to spawn.
 			// Note: Clones, respawned Mutant Tanks, randomized Tanks, and Mutant Tanks spawned through the Mutant Tanks menu are not affected.
+			// Note: If each enabled Mutant Tank has less than 100% chance of spawning, then every enabled Mutant Tank that has a 1% or higher chance of spawning will have an equal chance to spawn.
 			// Note: Do not change this setting if you are unsure of how it works.
 			// --
 			// Minimum: 0.0 (No chance)
@@ -2706,6 +3507,7 @@
 			// Note: Tank notes support chat color tags in the translation file.
 			// Note: This setting can be overridden for specific players.
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each player-controlled Mutant Tank's "General" section decide.
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Tank Note"				"0"
@@ -2715,7 +3517,6 @@
 			// Note: Do not change this setting if you are unsure of how it works.
 			// Note: This setting overrides the same setting under the "Plugin Settings/General" section.
 			// --
-			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from the "Plugin Settings/General" section decide.
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Spawn Enabled"				"1"
@@ -2803,6 +3604,158 @@
 			// 0.0: Random
 			// 0.01-1.0: Burn percentage
 			"Burnt Skin"				"-1.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "General" section for each special infected here.
+
+				// Enable Mutant Special Infected types.
+				// Note: This setting determines full availability. Even if other spawn settings are enabled while this is disabled, the Mutant Special Infected type will stay disabled.
+				// Note: This setting overrides the same setting under the "Plugin Settings/General" section.
+				// --
+				// Add up numbers together for different results.
+				// --
+				// Minimum: -1
+				// Maximum: 63
+				// --
+				// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from the "Plugin Settings/General" section decide.
+				// 0/"disabled"/"false"/"off"/"no": OFF
+				// 1: Enable Smokers.
+				// 2: Enable Boomers.
+				// 4: Enable Hunters.
+				// 8: Enable Spitters. (Only available in Left 4 Dead 2.)
+				// 16: Enable Jockeys. (Only available in Left 4 Dead 2.)
+				// 32: Enable Chargers. (Only available in Left 4 Dead 2.)
+				"Special Types"				"-1"
+
+				// Name of the Mutant Boomer.
+				// Note: This name is only used for renaming the Mutant Boomer in the server and checking which translation phrase to use.
+				// Note: For displaying this name in chat messages and other forms of text, use the translation file.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Character limit: 32
+				// --
+				// Empty: "Boomer"
+				// Not Empty: Boomer's custom name
+				"Boomer Name"				"Boomer #1"
+
+				// Name of the Mutant Charger.
+				// Note: This name is only used for renaming the Mutant Charger in the server and checking which translation phrase to use.
+				// Note: For displaying this name in chat messages and other forms of text, use the translation file.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Character limit: 32
+				// --
+				// Empty: "Charger"
+				// Not Empty: Charger's custom name
+				"Charger Name"				"Charger #1"
+
+				// Name of the Mutant Hunter.
+				// Note: This name is only used for renaming the Mutant Hunter in the server and checking which translation phrase to use.
+				// Note: For displaying this name in chat messages and other forms of text, use the translation file.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Character limit: 32
+				// --
+				// Empty: "Hunter"
+				// Not Empty: Hunter's custom name
+				"Hunter Name"				"Hunter #1"
+
+				// Name of the Mutant Jockey.
+				// Note: This name is only used for renaming the Mutant Jockey in the server and checking which translation phrase to use.
+				// Note: For displaying this name in chat messages and other forms of text, use the translation file.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Character limit: 32
+				// --
+				// Empty: "Jockey"
+				// Not Empty: Jockey's custom name
+				"Jockey Name"				"Jockey #1"
+
+				// Name of the Mutant Smoker.
+				// Note: This name is only used for renaming the Mutant Smoker in the server and checking which translation phrase to use.
+				// Note: For displaying this name in chat messages and other forms of text, use the translation file.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Character limit: 32
+				// --
+				// Empty: "Smoker"
+				// Not Empty: Smoker's custom name
+				"Smoker Name"				"Smoker #1"
+
+				// Name of the Mutant Spitter.
+				// Note: This name is only used for renaming the Mutant Spitter in the server and checking which translation phrase to use.
+				// Note: For displaying this name in chat messages and other forms of text, use the translation file.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Character limit: 32
+				// --
+				// Empty: "Spitter"
+				// Not Empty: Spitter's custom name
+				"Spitter Name"				"Spitter #1"
+
+				// The Mutant Special Infected has this many chances out of 100.0% to spawn.
+				// Note: Clones, respawned Mutant Special Infected, randomized Special Infected, and Mutant Special Infected spawned through the Mutant Special Infected menu are not affected.
+				// Note: If each enabled Mutant Special Infected has less than 100% chance of spawning, then every enabled Mutant Special Infected that has a 1% or higher chance of spawning will have an equal chance to spawn.
+				// Note: Do not change this setting if you are unsure of how it works.
+				// --
+				// Minimum: 0.0 (No chance)
+				// Maximum: 100.0 (Highest chance)
+				// --
+				// Keywords:
+				// "never" - 0% chance
+				// "sometimes"/"unlikely"/"seldom" - 33.3% chance
+				// "maybe" - 50% chance
+				// "often"/"likely"/"frequently" - 66.6% chance
+				// "always" - 100% chance
+				"Special Chance"			"100.0"
+
+				// Display a note for the Mutant Special Infected when it spawns.
+				// Note: This note can also be displayed for clones if the "Clone Mode" setting is set to "1", so the chat could be spammed if multiple clones spawn.
+				// Note: A note must be manually created in the translation file (mutant_tanks_names.phrases.txt).
+				// Note: Special Infected notes support chat color tags in the translation file.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each player-controlled Mutant Special Infected's "General" section decide.
+				// 0/"disabled"/"false"/"off"/"no": OFF
+				// 1/"enabled"/"true"/"on"/"yes": ON
+				"Special Note"				"0"
+
+				// The model used by the Mutant Special Infected.
+				// Note: This setting only works for the Smoker, Boomer, and Hunter.
+				// Note: This setting overrides the same setting under the "Plugin Settings/General" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Add up numbers together for different results.
+				// --
+				// Minimum: 0
+				// Maximum: 3
+				// --
+				// 0: OFF (Let the game decide.)
+				// 1: Default model
+				// 2: L4D1 model (Only available in Left 4 Dead 2.)
+				"Special Model"				"0"
+
+				// Example
+				"Game Type"				"0"
+				"Special Types"				"-1"
+				"Boomer Name"				"Boomer #1"
+				"Charger Name"				"Charger #1"
+				"Hunter Name"				"Hunter #1"
+				"Jockey Name"				"Jockey #1"
+				"Smoker Name"				"Smoker #1"
+				"Spitter Name"				"Spitter #1"
+				"Special Chance"			"100.0"
+				"Special Note"				"0"
+				"Spawn Enabled"				"1"
+				"Menu Enabled"				"1"
+				"Death Revert"				"0"
+				"Skin Color"				"255,255,255,255"
+				"Special Model"				"0"
+				"Requires Humans"			"0"
+				"Burn Duration"				"0.0"
+				"Burnt Skin"				"-1.0"
+			}
 		}
 		"Announcements"
 		{
@@ -2812,7 +3765,7 @@
 			// --
 			// Add up numbers together for different results.
 			// --
-			// Minimum: 0
+			// Minimum: -1
 			// Maximum: 31
 			// --
 			// 0: OFF
@@ -2950,6 +3903,24 @@
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Vocalize Death"			"1"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Announcements" section for each special infected here.
+
+				// Example
+				"Announce Arrival"			"0"
+				"Announce Death"			"0"
+				"Announce Kill"				"0"
+				"Arrival Message"			"0"
+				"Arrival Sound"				"1"
+				"Death Details"				"5"
+				"Death Message"				"0"
+				"Death Sound"				"1"
+				"Kill Message"				"0"
+				"Vocalize Arrival"			"1"
+				"Vocalize Death"			"1"
+			}
 		}
 		"Rewards"
 		{
@@ -2976,12 +3947,19 @@
 			// - Receive 100% temporary health after being revived.
 			// - Slowly regenerate back to full health.
 			// - Leech health off of any infected per melee hit.
+			// - Turn damage into health from self-made fires.
+			// - Turn damage into health from self-made explosions.
+			// - Heal teammates with bullets.
+			// - Heal teammates with melee hits.
 			// 2: Speed boost reward (temporary)
 			// - Run faster
 			// - Jump higher (Disables the death fall camera for recipients.)
 			// - Receive the adrenaline effect for the duration of the reward. (Only available in Left 4 Dead 2.)
 			// - Bunny hop consistently
+			// - Burst open doors
+			// - Throw sticky grenades that slow down special infected and mitigate their abilities.
 			// 4: Damage boost reward (temporary)
+			// - Laser sight
 			// - Inextinguishable fire
 			// - Extended pipebomb duration
 			// - Prevent dealing and receiving friendly-fire.
@@ -2989,6 +3967,7 @@
 			// - Bypass Tank immunities
 			// - Damage resistance
 			// - Automatically kill Witches.
+			// - Ghost bullets
 			// - Hollowpoint ammo
 			// - Extended melee range
 			// - Recoil dampener
@@ -3002,9 +3981,9 @@
 			// - Prevent switching to throwables and health supplies given by teammates.
 			// - Perform actions on ladders.
 			// - Bypass shove penalty.
-			// - Shoving Tanks does damage.
+			// - Shoving damages Tanks.
 			// - Faster shove interval
-			// - Faster shoot rate (guns)
+			// - Faster fire rate (guns)
 			// - Faster reload rate (guns)
 			// - Faster swing rate (melee)
 			// - Faster throw time (throwables)
@@ -3015,17 +3994,20 @@
 			// - Faster pour time (gas cans)
 			// - Faster delivery time (cola bottles)
 			// - Faster recovery time
+			// - Rapid-fire pistols
 			// 16: Ammo reward (temporary)
 			// - Refill clip to max size
 			// - Refill magazine to max size
 			// - Extra clip and magazine size
-			// - Receive one of the special ammo (incendiary or explosive). (Only available in Left 4 Dead 2.)
+			// - Receive one of the special ammo types (incendiary or explosive). (Only available in Left 4 Dead 2.)
 			// - Slowly regenerate back to full capacity.
+			// - Throw multiple pipe bombs at once (cluster bombs).
 			// 32: Item reward
 			// - Receive up to five items.
 			// 64: God mode reward (temporary)
 			// - Automatically prevent attacks from and kill all special infected attackers.
 			// - Immune to all types of damage.
+			// - Cannot be nudged by teammates.
 			// - Cannot be flung away by Chargers.
 			// - Cannot be pushed around.
 			// - Cannot be vomited on by Boomers.
@@ -3078,12 +4060,19 @@
 			// - Receive 100% temporary health after being revived.
 			// - Slowly regenerate back to full health.
 			// - Leech health off of any infected per melee hit.
+			// - Turn damage into health from self-made fires.
+			// - Turn damage into health from self-made explosions.
+			// - Heal teammates with bullets.
+			// - Heal teammates with melee hits.
 			// 2: Speed boost reward (temporary)
 			// - Run faster
 			// - Jump higher (Disables the death fall camera for recipients.)
 			// - Receive the adrenaline effect for the duration of the reward. (Only available in Left 4 Dead 2.)
 			// - Bunny hop consistently
+			// - Burst open doors
+			// - Throw sticky grenades that slow down special infected and mitigate their abilities.
 			// 4: Damage boost reward (temporary)
+			// - Laser sight
 			// - Inextinguishable fire
 			// - Extended pipebomb duration
 			// - Prevent dealing and receiving friendly-fire.
@@ -3091,6 +4080,7 @@
 			// - Bypass Tank immunities
 			// - Damage resistance
 			// - Automatically kill Witches.
+			// - Ghost bullets
 			// - Hollowpoint ammo
 			// - Extended melee range
 			// - Recoil dampener
@@ -3104,9 +4094,9 @@
 			// - Prevent switching to throwables and health supplies given by teammates.
 			// - Perform actions on ladders.
 			// - Bypass shove penalty.
-			// - Shoving Tanks does damage.
+			// - Shoving damages Tanks.
 			// - Faster shove interval
-			// - Faster shoot rate (guns)
+			// - Faster fire rate (guns)
 			// - Faster reload rate (guns)
 			// - Faster swing rate (melee)
 			// - Faster throw time (throwables)
@@ -3117,17 +4107,20 @@
 			// - Faster pour time (gas cans)
 			// - Faster delivery time (cola bottles)
 			// - Faster recovery time
+			// - Rapid-fire pistols
 			// 16: Ammo reward (temporary)
 			// - Refill clip to max size
 			// - Refill magazine to max size
 			// - Extra clip and magazine size
-			// - Receive one of the special ammo (incendiary or explosive). (Only available in Left 4 Dead 2.)
+			// - Receive one of the special ammo types (incendiary or explosive). (Only available in Left 4 Dead 2.)
 			// - Slowly regenerate back to full capacity.
+			// - Throw multiple pipe bombs at once (cluster bombs).
 			// 32: Item reward
 			// - Receive up to five items.
 			// 64: God mode reward (temporary)
 			// - Automatically prevent attacks from and kill all special infected attackers.
 			// - Immune to all types of damage.
+			// - Cannot be nudged by teammates.
 			// - Cannot be flung away by Chargers.
 			// - Cannot be pushed around.
 			// - Cannot be vomited on by Boomers.
@@ -3409,6 +4402,24 @@
 			// 4th number = Boost for assistant killers.
 			"Attack Boost Reward"			"0.0,0.0,0.0,0.0"
 
+			// Allow healing from self-made fires as a reward to survivors.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Allow healing from self-made fires to killers.
+			// 2nd number = Allow healing from self-made fires to assistants.
+			// 3rd number = Allow healing from self-made fires to teammates.
+			// 4th number = Allow healing from self-made fires to assistant killers.
+			"Blaze Health Reward"			"0,0,0,0"
+
 			// Allow bunnyhopping as a reward to survivors.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
 			// Note: This setting can be overridden for specific players.
@@ -3462,6 +4473,24 @@
 			// 3rd number = Give clean kills to teammates.
 			// 4th number = Give clean kills to assistant killers.
 			"Clean Kills Reward"			"0,0,0,0"
+
+			// Allow survivors to throw cluster bombs (multiple pipe bombs) as a reward.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 6
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 5 (Highest)
+			// --
+			// 1st number = Number of clustered pipe bombs to give to killers.
+			// 2nd number = Number of clustered pipe bombs to give to assistants.
+			// 3rd number = Number of clustered pipe bombs to give to teammates.
+			// 4th number = Number of clustered pipe bombs to give to assistant killers.
+			"Cluster Bombs Reward"			"0,0,0,0"
 
 			// The damage boost to reward to survivors.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
@@ -3531,6 +4560,24 @@
 			// 3rd number = Give immunity to teammates.
 			// 4th number = Give immunity to assistant killers.
 			"Friendly Fire Reward"			"0,0,0,0"
+
+			// Give ghost bullets as a reward to survivors.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Give ghost bullets to killers.
+			// 2nd number = Give ghost bullets to assistants.
+			// 3rd number = Give ghost bullets to teammates.
+			// 4th number = Give ghost bullets to assistant killers.
+			"Ghost Bullets Reward"			"0,0,0,0"
 
 			// The healing percentage from first aid kits to reward to survivors.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
@@ -3717,6 +4764,24 @@
 			// 4th number = Amount for assistant killers.
 			"Life Leech Reward"			"0,0,0,0"
 
+			// Allow healing teammates with melee hits as a reward to survivors.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Allow healing teammates with melee hits to killers.
+			// 2nd number = Allow healing teammates with melee hits to assistants.
+			// 3rd number = Allow healing teammates with melee hits to teammates.
+			// 4th number = Allow healing teammates with melee hits to assistant killers.
+			"Medical Incisions Reward"		"0,0,0,0"
+
 			// The melee range to reward to survivors.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
 			// Note: This setting can be overridden for specific players.
@@ -3789,6 +4854,24 @@
 			// 4th number = Resistance for assistant killers.
 			"Punch Resistance Reward"		"0.0,0.0,0.0,0.0"
 
+			// The rapid pistol fire rate to reward to survivors.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Separate resistances with commas (",").
+			// --
+			// Resistances limit: 4
+			// Character limit for each fire rate: 6
+			// --
+			// Minimum value for each resistance: 0.0 (OFF)
+			// Maximum value for each resistance: 1.0 (None)
+			// --
+			// 1st number = Rapid pistol fire rate for killers.
+			// 2nd number = Rapid pistol fire rate for assistants.
+			// 3rd number = Rapid pistol fire rate for teammates.
+			// 4th number = Rapid pistol fire rate for assistant killers.
+			"Rapid Pistol Reward"			"0.0,0.0,0.0,0.0"
+
 			// Give recoil dampener as a reward to survivors.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
 			// Note: This setting can be overridden for specific players.
@@ -3824,6 +4907,24 @@
 			// 3rd number = Heal percentage for teammates.
 			// 4th number = Heal percentage for assistant killers.
 			"Refill Percent Reward"			"0.0,0.0,0.0,0.0"
+
+			// Allow healing from self-made explosions as a reward to survivors.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Allow healing from self-made explosions to killers.
+			// 2nd number = Allow healing from self-made explosions to assistants.
+			// 3rd number = Allow healing from self-made explosions to teammates.
+			// 4th number = Allow healing from self-made explosions to assistant killers.
+			"Regen Bursts Reward"			"0,0,0,0"
 
 			// Restore the previous loadouts of survivors after respawning them.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
@@ -4033,6 +5134,42 @@
 			// 3rd number = Stack rewards for teammates.
 			// 4th number = Stack rewards for assistant killers.
 			"Stack Rewards"				"0,0,0,0"
+
+			// Give sticky grenades as a reward to survivors.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Give sticky grenades to killers.
+			// 2nd number = Give sticky grenades to assistants.
+			// 3rd number = Give sticky grenades to teammates.
+			// 4th number = Give sticky grenades to assistant killers.
+			"Sticky Grenades Reward"		"0,0,0,0"
+
+			// Allow healing teammates with bullets as a reward to survivors.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Separate values with commas (",").
+			// --
+			// Values limit: 4
+			// Character limit for each value: 1
+			// --
+			// Minimum value for each: 0 (OFF)
+			// Maximum value for each: 1 (ON)
+			// --
+			// 1st number = Allow healing teammates with bullets to killers.
+			// 2nd number = Allow healing teammates with bullets to assistants.
+			// 3rd number = Allow healing teammates with bullets to teammates.
+			// 4th number = Allow healing teammates with bullets to assistant killers.
+			"Syringe Darts Reward"			"0,0,0,0"
 
 			// Give thorns as a reward to survivors.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Rewards" section.
@@ -4262,6 +5399,76 @@
 			// 3rd number = Voice pitch for teammates.
 			// 4th number = Voice pitch for assistant killers.
 			"Voice Pitch Visual"			"0,0,0,0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				"Reward Enabled"			"-1,-1,-1,-1"
+				"Reward Bots"				"-1,-1,-1,-1"
+				"Reward Chance"				"0.0,0.0,0.0,0.0"
+				"Reward Duration"			"0.0,0.0,0.0,0.0"
+				"Reward Effect"				"0,0,0,0"
+				"Reward Notify"				"0,0,0,0"
+				"Reward Percentage"			"0.0,0.0,0.0,0.0"
+				"Reward Visual"				"0,0,0,0" // Default is "63" on Left 4 Dead 1.
+				"Prefs Notify"				"0,0,0,0"
+				"Share Rewards"				"0,0,0,0"
+				"Teammate Limit"			"0"
+				"Action Duration Reward"		"0.0,0.0,0.0,0.0"
+				"Ammo Boost Reward"			"0,0,0,0"
+				"Ammo Regen Reward"			"0,0,0,0"
+				"Attack Boost Reward"			"0.0,0.0,0.0,0.0"
+				"Blaze Health Reward"			"0,0,0,0"
+				"Bunny Hop Reward"			"0,0,0,0"
+				"Burst Doors Reward"			"0,0,0,0"
+				"Clean Kills Reward"			"0,0,0,0"
+				"Cluster Bombs Reward"			"0,0,0,0"
+				"Damage Boost Reward"			"0.0,0.0,0.0,0.0"
+				"Damage Resistance Reward"		"0.0,0.0,0.0,0.0"
+				"Fall Voiceline Reward"			""
+				"Friendly Fire Reward"			"0,0,0,0"
+				"Ghost Bullets Reward"			"0,0,0,0"
+				"Heal Percent Reward"			"0.0,0.0,0.0,0.0"
+				"Health Regen Reward"			"0,0,0,0"
+				"Hollowpoint Ammo Reward"		"0,0,0,0"
+				"Inextinguishable Fire Reward"		"0,0,0,0"
+				"Infinite Ammo Reward"			"0,0,0,0"
+				"Item Reward"				""
+				"Jump Height Reward"			"0.0,0.0,0.0,0.0"
+				"Ladder Actions Reward"			"0,0,0,0"
+				"Lady Killer Reward"			"0,0,0,0"
+				"Life Leech Reward"			"0,0,0,0"
+				"Medical Incisions Reward"		"0,0,0,0"
+				"Melee Range Reward"			"0,0,0,0"
+				"Midair Dashes Reward"			"0,0,0,0"
+				"Pipebomb Duration Reward"		"0.0,0.0,0.0,0.0"
+				"Punch Resistance Reward"		"0.0,0.0,0.0,0.0"
+				"Rapid Pistol Reward"			"0.0,0.0,0.0,0.0"
+				"Recoil Dampener Reward"		"0,0,0,0"
+				"Refill Percent Reward"			"0.0,0.0,0.0,0.0"
+				"Regen Bursts Reward"			"0,0,0,0"
+				"Respawn Loadout Reward"		"0,0,0,0"
+				"Revive Health Reward"			"0,0,0,0"
+				"Shove Damage Reward"			"0.0,0.0,0.0,0.0"
+				"Shove Penalty Reward"			"0,0,0,0"
+				"Shove Rate Reward"			"0.0,0.0,0.0,0.0"
+				"Sledgehammer Rounds Reward"		"0,0,0,0"
+				"Special Ammo Reward"			"0,0,0,0"
+				"Speed Boost Reward"			"0.0,0.0,0.0,0.0"
+				"Stack Limits"				"0,0,0,0,0,0,0,0"
+				"Stack Rewards"				"0,0,0,0"
+				"Sticky Grenades Reward"		"0,0,0,0"
+				"Syringe Darts Reward"			"0,0,0,0"
+				"Thorns Reward"				"0,0,0,0"
+				"Useful Rewards"			"0,0,0,0"
+				"Body Color Visual"			""
+				"Glow Color Visual"			""
+				"Light Color Visual"			""
+				"Looping Voiceline Interval"		"0.0,0.0,0.0,0.0"
+				"Looping Voiceline Visual"		""
+				"Particle Effect Visual"		"0,0,0,0"
+				"Screen Color Visual"			""
+				"Voice Pitch Visual"			"0,0,0,0"
+			}
 		}
 		"Competitive"
 		{
@@ -4337,10 +5544,22 @@
 			// 0: Glow outline visible only on sight.
 			// 1: Glow outline visible through the walls.
 			"Glow Type"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Glow" section for each special infected here.
+
+				// Example
+				"Glow Enabled"				"0"
+				"Glow Color"				"255,255,255"
+				"Glow Flashing"				"0"
+				"Glow Range"				"0-99999"
+				"Glow Type"				"0"
+			}
 		}
 		"Administration"
 		{
-			// Admins with one or more of these access flags has access to the Mutant Tank type.
+			// Admins with one or more of these access flags have access to the Mutant Tank type.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Administration" section.
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -4364,6 +5583,14 @@
 			// 1: ON, inform players about activating their abilities manually.
 			// 2: ON, do not inform players about activating their abilities manually.
 			"Human Support"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Human Support" section for each special infected here.
+
+				// Example
+				"Human Support"				"0"
+			}
 		}
 		"Spawn"
 		{
@@ -4417,6 +5644,29 @@
 			// 3: Spawn as Mutant Tanks that temporarily transforms into a different type and reverts back after awhile.
 			// 4: Spawn as normal Mutant Tanks that can combine abilities.
 			"Spawn Type"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Spawn" section for each special infected here.
+
+				// The Mutant Special Infected will only spawn on finale maps.
+				// Note: Clones, respawned Mutant Special Infected, randomized Special Infected, and Mutant Special Infected spawned through the Mutant Special Infected menus are not affected.
+				// Note: Do not change this setting if you are unsure of how it works.
+				// --
+				// 0: OFF, the Mutant Special Infected can appear on any map.
+				// 1: ON, the Mutant Special Infected can only appear on finale maps.
+				// 2: ON, the Mutant Special Infected can only appear on non-finale maps.
+				// 3: ON, the Mutant Special Infected can only appear on finale maps before the rescue vehicle is called.
+				// 4: ON, the Mutant Special Infected can only appear on finale maps after the rescue vehicle is called.
+				"Finale Special"			"0"
+
+				// Example
+				"Type Limit"				"0"
+				"Close Areas Only"			"0.0"
+				"Finale Special"			"0"
+				"Open Areas Only"			"0.0"
+				"Spawn Type"				"0"
+			}
 		}
 		"Boss"
 		{
@@ -4428,6 +5678,21 @@
 			// 0: OFF
 			// 1-500: ON, the base Mutant Tank type of the boss.
 			"Boss Base Type"			"0"
+
+			// The effects for the boss.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 15
+			// --
+			// 0: OFF
+			// 1: Survivor reactions
+			// 2: Explosion
+			// 4: Impact wave
+			// 8: Slow-motion (Only available in Left 4 Dead 2.)
+			"Boss Effects"				"0"
 
 			// The health of bosses needed for each stage.
 			// Note: This setting only takes effect when the "Spawn Type" setting is set to "1".
@@ -4490,6 +5755,19 @@
 			// 3rd number = 4th stage type
 			// 4th number = 5th stage type
 			"Boss Types"				"2,3,4,5"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Boss" section for each special infected here.
+
+				// Example
+				"Boss Base Type"			"0"
+				"Boss Effects"				"0"
+				"Boss Health Stages"			"5000,2500,1666,1250"
+				"Boss Limit"				"0"
+				"Boss Stages"				"4"
+				"Boss Types"				"2,3,4,5"
+			}
 		}
 		"Combo"
 		{
@@ -4892,6 +6170,30 @@
 			// 5th number = Chance to combine post-spawn abilities.
 			// 6th number = Chance to combine upon-death abilities.
 			"Combo Type Chance"			"0.0,0.0,0.0,0.0,0.0,0.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Combo" section for each special infected here.
+
+				// Example
+				"Combo Chance"				"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Cooldown"			"0,0,0,0,0,0,0,0,0,0"
+				"Combo Damage"				"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Death Chance"			"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Death Range"			"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Delay"				"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Duration"			"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Interval"			"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Radius"				"0.0;0.0,0.0;0.0,0.0;0.0,0.0;0.0,0.0;0.0,0.0;0.0,0.0;0.0,0.0;0.0,0.0;0.0,0.0;0.0"
+				"Combo Range"				"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Range Chance"			"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Range Cooldown"			"0,0,0,0,0,0,0,0,0,0"
+				"Combo Rock Chance"			"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Rock Cooldown"			"0,0,0,0,0,0,0,0,0,0"
+				"Combo Set"				""
+				"Combo Speed"				"0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0"
+				"Combo Type Chance"			"0.0,0.0,0.0,0.0,0.0,0.0"
+			}
 		}
 		"Random"
 		{
@@ -4899,6 +6201,7 @@
 			// Note: Do not change this setting if you are unsure of how it works.
 			// Note: This setting can be overridden for specific players.
 			// --
+			// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each player-controlled Mutant Tank's "Random" section decide.
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Random Tank"				"1"
@@ -4930,6 +6233,25 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Random Interval"			"5.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Random" section for each special infected here.
+
+				// The Mutant Special Infected can be used by other Mutant Special Infected who spawn with the Randomization mode feature.
+				// Note: Do not change this setting if you are unsure of how it works.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// -1/"ignore"/"exclude"/"filter"/"remove": Let the setting with the same name from each player-controlled Mutant Special Infected's "Random" section decide.
+				// 0/"disabled"/"false"/"off"/"no": OFF
+				// 1/"enabled"/"true"/"on"/"yes": ON
+				"Random Special"			"1"
+
+				// Example
+				"Random Special"			"1"
+				"Random Duration"			"99999.0"
+				"Random Interval"			"5.0"
+			}
 		}
 		"Transform"
 		{
@@ -4978,6 +6300,16 @@
 			// Minimum: 1
 			// Maximum: 500
 			"Transform Types"			"1,2,3,4,5,6,7,8,9,10"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Transform" section for each special infected here.
+
+				// Example
+				"Transform Delay"			"10.0"
+				"Transform Duration"			"10.0"
+				"Transform Types"			"1,2,3,4,5,6,7,8,9,10"
+			}
 		}
 		"Props"
 		{
@@ -5137,6 +6469,15 @@
 			// 3rd number = Blue
 			// 4th number = Alpha
 			"Crown Color"				"255,255,255,255"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Props" section for each special infected here.
+
+				// Example
+				"Rock Color"				"255,255,255,255"
+				"Rock Model"				"2"
+			}
 		}
 		"Particles"
 		{
@@ -5172,6 +6513,15 @@
 			// 4: Fire Trail
 			// 8: Acid Trail (Only available in Left 4 Dead 2.)
 			"Rock Effects"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Particles" section for each special infected here.
+
+				// Example
+				"Body Effects"				"0"
+				"Rock Effects"				"0"
+			}
 		}
 		"Health"
 		{
@@ -5246,7 +6596,7 @@
 
 			// The health of the Mutant Tank is multiplied by this value.
 			// Note: Health = Health x Health percentage multiplier
-			// Example: Health = 4000 x 2.5 (10000)
+			// Example: Health = 4000 x 2.5 = 10000
 			// Note: Use the value "1.0" to disable this setting. (Health x 1.0 = Health)
 			// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
 			// Note: This setting can be overridden for specific players.
@@ -5284,6 +6634,251 @@
 			// 2: Multiply extra health only.
 			// 3: Multiply both.
 			"Multiply Health"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Health" section for each special infected here.
+
+				// Base health given to all Mutant Boomers.
+				// Note: Boomer's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Boomer's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Boomer Base Health"			"0"
+
+				// Extra health given to the Mutant Boomer.
+				// Note: Boomer's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Boomer's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Boomer Extra Health"			"0"
+
+				// Base health given to all Mutant Chargers.
+				// Note: Charger's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Charger's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Charger Base Health"			"0"
+
+				// Extra health given to the Mutant Charger.
+				// Note: Charger's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Charger's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Charger Extra Health"			"0"
+
+				// Base health given to all Mutant Hunters.
+				// Note: Hunter's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Hunter's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Hunter Base Health"			"0"
+
+				// Extra health given to the Mutant Hunter.
+				// Note: Hunter's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Hunter's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Hunter Extra Health"			"0"
+
+				// Base health given to all Mutant Jockeys.
+				// Note: Jockey's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Jockey's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Jockey Base Health"			"0"
+
+				// Extra health given to the Mutant Jockey.
+				// Note: Jockey's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Jockey's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Jockey Extra Health"			"0"
+
+				// Base health given to all Mutant Smokers.
+				// Note: Smoker's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Smoker's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Smoker Base Health"			"0"
+
+				// Extra health given to the Mutant Smoker.
+				// Note: Smoker's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Smoker's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Smoker Extra Health"			"0"
+
+				// Base health given to all Mutant Spitters.
+				// Note: Spitter's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Spitter's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: 0 (OFF)
+				// Maximum: 1000000
+				"Spitter Base Health"			"0"
+
+				// Extra health given to the Mutant Spitter.
+				// Note: Spitter's health limit on any difficulty is 1,000,000.
+				// Note: Disable this setting if it conflicts with other plugins.
+				// Note: Depending on the value of the "Multiply Health" setting, the Mutant Spitter's health will be multiplied based on player count.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Health" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// Minimum: -1000000
+				// Maximum: 1000000
+				// --
+				// Positive numbers: Current health + Extra health
+				// Negative numbers: Current health - Extra health
+				"Spitter Extra Health"			"0"
+
+				// Example
+				"Boomer Base Health"			"0"
+				"Charger Base Health"			"0"
+				"Hunter Base Health"			"0"
+				"Jockey Base Health"			"0"
+				"Smoker Base Health"			"0"
+				"Spitter Base Health"			"0"
+				"Display Health"			"0"
+				"Boomer Extra Health"			"0"
+				"Charger Extra Health"			"0"
+				"Hunter Extra Health"			"0"
+				"Jockey Extra Health"			"0"
+				"Smoker Extra Health"			"0"
+				"Spitter Extra Health"			"0"
+				"Display Health Type"			"0"
+				"Health Characters"			""
+				"Health Percentage Multiplier"		"0.0"
+				"Human Multiplier Mode"			"0"
+				"Minimum Humans"			"0"
+				"Multiply Health"			"0"
+			}
+		}
+		"Protection"
+		{
+			// The Mutant Tank will have spawn protection for a limited time.
+			// Note: Do not change this setting if you are unsure of how it works.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Protection" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0: OFF
+			// 1: Spawn with a temporary shield.
+			// 2: Spawn with temporary armor.
+			// 3: Both
+			"Spawn Protection"			"0"
+
+			// The duration of the Mutant Tank's armor for spawn protection.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Protection" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Armor Duration"			"3.0"
+
+			// The Mutant Tank's armor blocks this percentage of incoming damage.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Protection" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (God mode)
+			// Maximum: 1.0 (None)
+			"Armor Resistance"			"0.75"
+
+			// The duration of the Mutant Tank's shield for spawn protection.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Protection" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Shield Duration"			"1.0"
+
+			// The Mutant Tank's shield blocks this percentage of incoming damage.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Protection" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (God mode)
+			// Maximum: 1.0 (None)
+			"Shield Resistance"			"0.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Protection" section for each special infected here.
+
+				// Example
+				"Spawn Protection"			"0"
+				"Armor Duration"			"3.0"
+				"Armor Resistance"			"0.75"
+				"Shield Duration"			"1.0"
+				"Shield Resistance"			"0.0"
+			}
 		}
 		"Enhancements"
 		{
@@ -5350,7 +6945,7 @@
 
 			// The damage received by incapacitated survivors from the Mutant Tank is multiplied by this value.
 			// Note: Damage = Damage x Incap damage multiplier
-			// Example: Damage = 30.0 x 1.5 (45.0)
+			// Example: Damage = 30.0 x 1.5 = 45.0
 			// Note: Use the value "1.0" to disable this setting. (Damage x 1.0 = Damage)
 			// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
 			// Note: This setting can be overridden for specific players.
@@ -5358,6 +6953,40 @@
 			// Minimum: 1.0
 			// Maximum: 99999.0
 			"Incap Damage Multiplier"		"0.0"
+
+			// The Mutant Tank becomes intangible while alive.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Intangible Body"			"0"
+
+			// The mode of how melee hits affect the Mutant Tank.
+			// Note: If set to "1" then the formula is Damage = Max health x Melee hit value
+			// Example: Damage = 5000.0 x 0.05 = 250.0
+			// Note: If set to "2" then the formula is Damage = Melee hit value
+			// Example: Damage = 500.0
+			// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0: OFF
+			// 1: ON, melee hits deal damage based on a percentage of the Mutant Tank's max health.
+			// 2: ON, melee hits deal damage based on a certain amount.
+			"Melee Hit Mode"			"0"
+
+			// The value of melee hits against the Mutant Tank.
+			// Note: The value of the "Melee Hit Mode" setting determines how the value of this setting is applied.
+			// Note: If "Melee Hit Mode" is set to "1" use values between "0.0" and "1.0".
+			// Example: 0.05
+			// Note: If "Melee Hit Mode" is set to "2" use values between "0.0" and "99999.0".
+			// Example: 500.0
+			// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0 (Strongest)
+			"Melee Hit Value"			"0.0"
 
 			// The Mutant Tank's punches have this much force.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
@@ -5418,7 +7047,7 @@
 			// --
 			// OFF: 0.0
 			// Minimum: 0.1
-			// Maximum: 3.0
+			// Maximum: 99.0
 			"Run Speed"				"0.0"
 
 			// Skip the Mutant Tank's dying animation.
@@ -5429,8 +7058,7 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Skip Incap"				"0"
 
-			// Skip the Mutant Tank's taunting animation after incapacitating survivors.
-			// Note: Only available in Left 4 Dead 2.
+			// Skip the Mutant Tank's taunting animation after incapacitating survivors and when climbing.
 			// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -5461,6 +7089,63 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Throw Interval"			"0.0"
+
+			// The Mutant Tank throws a rock when using its rock throw ability.
+			// Note: This just throws a second rock for the Tank.
+			// Note: This can disrupt the default ability or free the survivor victim of the Charger/Hunter/Jockey/Smoker.
+			// Note: Do not change this setting if you want to preserve the default abilities of the Charger/Hunter/Jockey/Smoker.
+			// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Throw Rock"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Enhancements" section for each special infected here.
+
+				// The Mutant Special Infected's pins (Smoker grab, Hunter pounce, Jockey ride, Charger impact) do this much damage.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// OFF: -1.0
+				// Minimum: 0.0
+				// Maximum: 99999.0
+				// --
+				// Keywords:
+				// "nodmg"/"friendly"/"harmless" - 0.0 damage
+				// "weakest" - 1.0 damage
+				// "strongest" - 99999.0 damage
+				"Pin Damage"				"-1.0"
+
+				// The Mutant Special Infected uses its special ability every time this many seconds passes.
+				// Note: This setting overrides the same setting under the "Plugin Settings/Enhancements" section.
+				// Note: This setting can be overridden for specific players.
+				// --
+				// OFF: 0.0
+				// Minimum: 0.1
+				// Maximum: 99999.0
+				// --
+				// Keywords:
+				// "milli"/"millisecond" - 0.1 seconds
+				// "second" - 1 second
+				// "minute" - 1 minute
+				// "forever" - 99999 seconds
+				"Special Interval"			"0.0"
+
+				// Example
+				"Attack Interval"			"0.0"
+				"Claw Damage"				"-1.0"
+				"Incap Damage Multiplier"		"0.0"
+				"Intangible Body"			"0"
+				"Melee Hit Mode"			"0"
+				"Melee Hit Value"			"0.0"
+				"Pin Damage"				"-1.0"
+				"Run Speed"				"0.0"
+				"Special Interval"			"0.0"
+				"Throw Rock"				"0"
+			}
 		}
 		"Immunities"
 		{
@@ -5511,6 +7196,19 @@
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Vomit Immunity"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Immunities" section for each special infected here.
+
+				// Example
+				"Bullet Immunity"			"0"
+				"Explosive Immunity"			"0"
+				"Fire Immunity"				"0"
+				"Hittable Immunity"			"0"
+				"Melee Immunity"			"0"
+				"Vomit Immunity"			"0"
+			}
 		}
 	}
 }
@@ -5681,6 +7379,13 @@
 			// "always" - 100% chance
 			"Absorb Chance"				"33.3"
 
+			// This percentage of the Mutant Tank's absorbed damage is converted into armored health.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 1.0 (Full)
+			"Absorb Convert Percentage"		"0.0"
+
 			// The cooldown for the Mutant Tank's ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -5747,6 +7452,35 @@
 			// Minimum: 1.0
 			// Maximum: 99999.0
 			"Absorb Melee Divisor"			"200.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Absorb Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Absorb Bullet Divisor"			"20.0"
+				"Absorb Chance"				"33.3"
+				"Absorb Convert Percentage"		"0.0"
+				"Absorb Cooldown"			"0"
+				"Absorb Duration"			"5"
+				"Absorb Explosive Divisor"		"20.0"
+				"Absorb Fire Divisor"			"200.0"
+				"Absorb Hittable Divisor"		"20.0"
+				"Absorb Melee Divisor"			"200.0"
+			}
 		}
 	}
 }
@@ -5767,7 +7501,7 @@
 		// - "Acid Range"
 		// - "Acid Range Chance"
 		// - "Acid Range Cooldown"
-		// "Acid Death" - When the Mutant Tank dies, an acid puddle is created underneath the Mutant Tank.
+		// "Acid Death" - When the Mutant Tank dies or spawns, an acid puddle is created underneath the Mutant Tank.
 		// - "Acid Death Chance"
 		// - "Acid Death Range"
 		// "Acid Hit" - When a survivor is hit by the Mutant Tank's claw or rock, or a survivor hits the Mutant Tank with a melee weapon, an acid puddle is created underneath the survivor.
@@ -5954,6 +7688,20 @@
 			// "hit,ability,rock"/"all" - 7
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the hit ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -5983,12 +7731,30 @@
 			// "forever" - 99999 seconds
 			"Acid Cooldown"				"0"
 
+			// The Mutant Tank's acid puddles do this much damage.
+			// Note: This is ignored when the "Combo Ability" setting is set to "1".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "weakest" - 1.0 damage
+			// "strongest" - 99999.0 damage
+			"Acid Damage"				"3.0"
+
 			// Enable the Mutant Tank's upon-death range ability.
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
 			// --
-			// 0/"disabled"/"false"/"off"/"no": OFF
-			// 1/"enabled"/"true"/"on"/"yes": ON
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0: OFF
+			// 1: Trigger the range ability when the Mutant Tank dies.
+			// 2: Trigger the range ability when the Mutant Tank spawns.
 			"Acid Death"				"1"
 
 			// The Mutant Tank has this many chances out of 100.0% to trigger the upon-death ability.
@@ -6117,6 +7883,42 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Acid Rock Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Acid Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Pin Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Acid Chance"				"33.3"
+				"Acid Cooldown"				"0"
+				"Acid Damage"				"3.0"
+				"Acid Death"				"1"
+				"Acid Death Chance"			"33.3"
+				"Acid Death Range"			"200.0"
+				"Acid Hit"				"0"
+				"Acid Hit Mode"				"0"
+				"Acid Pin"				"0"
+				"Acid Pin Chance"			"33.3"
+				"Acid Pin Cooldown"			"0"
+				"Acid Range"				"150.0"
+				"Acid Range Chance"			"15.0"
+				"Acid Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -6299,6 +8101,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -6341,6 +8157,13 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Aimless Duration"			"5.0"
+
+			// The Mutant Tank's ability causes survivors to fire their guns uncontrollably.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Aimless Gunshots"			"0"
 
 			// Enable the Mutant Tank's claw/rock attack.
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
@@ -6403,6 +8226,36 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Aimless Range Cooldown"		"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Aimless Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Aimless Chance"			"33.3"
+				"Aimless Cooldown"			"0"
+				"Aimless Duration"			"5.0"
+				"Aimless Gunshots"			"0"
+				"Aimless Hit"				"0"
+				"Aimless Hit Mode"			"0"
+				"Aimless Range"				"150.0"
+				"Aimless Range Chance"			"15.0"
+				"Aimless Range Cooldown"		"0"
+			}
 		}
 	}
 }
@@ -6585,6 +8438,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -6614,11 +8481,11 @@
 			// "forever" - 99999 seconds
 			"Ammo Cooldown"				"0"
 
-			// The Mutant Tank sets survivors' ammunition to this amount.
+			// The Mutant Tank takes this amount of ammunition from survivors.
 			// Note: This setting can be overridden for specific players.
 			// --
 			// Minimum: 0
-			// Maximum: 25
+			// Maximum: 100
 			"Ammo Count"				"0"
 
 			// Enable the Mutant Tank's claw/rock attack.
@@ -6682,6 +8549,49 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Ammo Range Cooldown"			"0"
+
+			// The Mutant Tank takes this type of ammunition from survivors.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0 OR 3: All types of ammunition.
+			// 1: Magazine (Clip)
+			// 2: Reserved (Ammo)
+			"Ammo Type"				"3"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Ammo Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Ammo Chance"				"33.3"
+				"Ammo Cooldown"				"0"
+				"Ammo Count"				"0"
+				"Ammo Hit"				"0"
+				"Ammo Hit Mode"				"0"
+				"Ammo Range"				"150.0"
+				"Ammo Range Chance"			"15.0"
+				"Ammo Range Cooldown"			"0"
+				"Ammo Type"				"3"
+			}
 		}
 	}
 }
@@ -6864,6 +8774,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -6993,6 +8917,38 @@
 			// 2: Stagger the Mutant Tank only.
 			// 3: Stagger both.
 			"Blind Stagger"				"3"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Blind Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Blind Chance"				"33.3"
+				"Blind Cooldown"			"0"
+				"Blind Duration"			"5.0"
+				"Blind Hit"				"0"
+				"Blind Hit Mode"			"0"
+				"Blind Intensity"			"255"
+				"Blind Mode"				"0"
+				"Blind Range"				"150.0"
+				"Blind Range Chance"			"15.0"
+				"Blind Range Cooldown"			"0"
+				"Blind Stagger"				"3"
+			}
 		}
 	}
 }
@@ -7013,7 +8969,7 @@
 		// - "Bomb Range"
 		// - "Bomb Range Chance"
 		// - "Bomb Range Cooldown"
-		// "Bomb Death" - When the Mutant Tank dies, an explosion is created underneath the Mutant Tank.
+		// "Bomb Death" - When the Mutant Tank dies or spawns, an explosion is created underneath the Mutant Tank.
 		// - "Bomb Death Chance"
 		// - "Bomb Death Range"
 		// "Bomb Hit" - When a survivor is hit by the Mutant Tank's claw or rock, or a survivor hits the Mutant Tank with a melee weapon, an explosion is created around the survivor.
@@ -7199,6 +9155,20 @@
 			// "hit,ability,rock"/"all" - 7
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -7228,12 +9198,30 @@
 			// "forever" - 99999 seconds
 			"Bomb Cooldown"				"0"
 
+			// The Mutant Tank's bomb explosions do this much damage.
+			// Note: This is ignored when the "Combo Ability" setting is set to "1".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "weakest" - 1.0 damage
+			// "strongest" - 99999.0 damage
+			"Bomb Damage"				"3.0"
+
 			// Enable the Mutant Tank's upon-death range ability.
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
 			// --
-			// 0/"disabled"/"false"/"off"/"no": OFF
-			// 1/"enabled"/"true"/"on"/"yes": ON
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0: OFF
+			// 1: Trigger the range ability when the Mutant Tank dies.
+			// 2: Trigger the range ability when the Mutant Tank spawns.
 			"Bomb Death"				"1"
 
 			// The Mutant Tank has this many chances out of 100.0% to trigger the upon-death ability.
@@ -7361,6 +9349,42 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Bomb Rock Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Bomb Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Pin Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Bomb Chance"				"33.3"
+				"Bomb Cooldown"				"0"
+				"Bomb Damage"				"3.0"
+				"Bomb Death"				"1"
+				"Bomb Death Chance"			"33.3"
+				"Bomb Death Range"			"200.0"
+				"Bomb Hit"				"0"
+				"Bomb Hit Mode"				"0"
+				"Bomb Pin"				"0"
+				"Bomb Pin Chance"			"33.3"
+				"Bomb Pin Cooldown"			"0"
+				"Bomb Range"				"150.0"
+				"Bomb Range Chance"			"15.0"
+				"Bomb Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -7543,6 +9567,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The amount of temporary health given to survivors recovering from the Mutant Tank's bury ability.
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -7665,6 +9703,37 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Bury Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Bury Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Bury Buffer"				"100.0"
+				"Bury Chance"				"33.3"
+				"Bury Cooldown"				"0"
+				"Bury Duration"				"5.0"
+				"Bury Height"				"50.0"
+				"Bury Hit"				"0"
+				"Bury Hit Mode"				"0"
+				"Bury Range"				"150.0"
+				"Bury Range Chance"			"15.0"
+				"Bury Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -7899,6 +9968,33 @@
 			// Minimum: 0.0
 			// Maximum: 200.0
 			"Car Radius"				"-180.0,180.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Car Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Car Chance"				"33.3"
+				"Car Cooldown"				"0"
+				"Car Duration"				"5"
+				"Car Interval"				"0.6"
+				"Car Lifetime"				"30.0"
+				"Car Options"				"0"
+				"Car Owner"				"1"
+				"Car Radius"				"-180.0,180.0"
+			}
 		}
 	}
 }
@@ -8081,6 +10177,27 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
+			// Block the fall damage of the Mutant Tank's ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Choke Block"				"1"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -8209,6 +10326,38 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Choke Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Choke Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Choke Block"				"1"
+				"Choke Chance"				"33.3"
+				"Choke Cooldown"			"0"
+				"Choke Damage"				"5.0"
+				"Choke Delay"				"1.0"
+				"Choke Duration"			"5"
+				"Choke Hit"				"0"
+				"Choke Hit Mode"			"0"
+				"Choke Range"				"150.0"
+				"Choke Range Chance"			"15.0"
+				"Choke Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -8428,6 +10577,32 @@
 			// 0: OFF, use the randomization feature.
 			// 1-500: ON, the type of the clone.
 			"Clone Type"				"0-0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Clone Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Clone Amount"				"2"
+				"Clone Chance"				"33.3"
+				"Clone Cooldown"			"0"
+				"Clone Health"				"1000"
+				"Clone Lifetime"			"0.0"
+				"Clone Mode"				"0"
+				"Clone Remove"				"1"
+				"Clone Replace"				"1"
+				"Clone Type"				"0-0"
+			}
 		}
 	}
 }
@@ -8571,6 +10746,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -8624,6 +10813,31 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Cloud Duration"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Cloud Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Cloud Chance"				"33.3"
+				"Cloud Cooldown"			"0"
+				"Cloud Damage"				"5.0"
+				"Cloud Duration"			"0"
+			}
 		}
 	}
 }
@@ -8744,6 +10958,13 @@
 			// "always" - 100% chance
 			"Drop Clip Chance"			"33.3"
 
+			// The Mutant Tank drops this many weapons upon death.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 1
+			// Maximum: 32
+			"Drop Count"				"1"
+
 			// The position of the Mutant Tank's weapon.
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -8784,6 +11005,26 @@
 			// Minimum: 0.1
 			// Maximum: 2.0
 			"Drop Weapon Scale"			"1.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Drop Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Drop Chance"				"33.3"
+				"Drop Clip Chance"			"33.3"
+				"Drop Count"				"1"
+				"Drop Mode"				"0"
+				"Drop Weapon Name"			""
+			}
 		}
 	}
 }
@@ -8966,6 +11207,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -9083,6 +11338,36 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Drug Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Drug Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Drug Chance"				"33.3"
+				"Drug Cooldown"				"0"
+				"Drug Duration"				"5"
+				"Drug Hit"				"0"
+				"Drug Hit Mode"				"0"
+				"Drug Interval"				"1.0"
+				"Drug Range"				"150.0"
+				"Drug Range Chance"			"15.0"
+				"Drug Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -9265,6 +11550,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -9394,6 +11693,37 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Drunk Turn Interval"			"0.5"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Drunk Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Drunk Chance"				"33.3"
+				"Drunk Cooldown"			"0"
+				"Drunk Duration"			"5"
+				"Drunk Hit"				"0"
+				"Drunk Hit Mode"			"0"
+				"Drunk Range"				"150.0"
+				"Drunk Range Chance"			"15.0"
+				"Drunk Range Cooldown"			"0"
+				"Drunk Speed Interval"			"1.5"
+				"Drunk Turn Interval"			"0.5"
+			}
 		}
 	}
 }
@@ -9576,6 +11906,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -9705,6 +12049,45 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Electric Range Cooldown"		"0"
+
+			// The Mutant Tank sets the survivors' run speed to this value when they are stunned.
+			// Note: This is ignored when the "Combo Ability" setting is set to "1".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.1
+			// Maximum: 0.99
+			"Electric Stun Speed"			"0.25"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Electric Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Electric Chance"			"33.3"
+				"Electric Cooldown"			"0"
+				"Electric Damage"			"5.0"
+				"Electric Duration"			"5"
+				"Electric Hit"				"0"
+				"Electric Hit Mode"			"0"
+				"Electric Interval"			"1.0"
+				"Electric Range"			"150.0"
+				"Electric Range Chance"			"15.0"
+				"Electric Range Cooldown"		"0"
+			}
 		}
 	}
 }
@@ -9887,6 +12270,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -10007,6 +12404,36 @@
 			// 8: 4th slot only.
 			// 16: 5th slot only.
 			"Enforce Weapon Slots"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Enforce Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Enforce Chance"			"33.3"
+				"Enforce Cooldown"			"0"
+				"Enforce Duration"			"5.0"
+				"Enforce Hit"				"0"
+				"Enforce Hit Mode"			"0"
+				"Enforce Range"				"150.0"
+				"Enforce Range Chance"			"15.0"
+				"Enforce Range Cooldown"		"0"
+				"Enforce Weapon Slots"			"0"
+			}
 		}
 	}
 }
@@ -10032,6 +12459,14 @@
 			// Empty: No access flags have access.
 			// Not empty: These access flags have access.
 			"Access Flags"				""
+
+			// Admins with one or more of these immunity flags are immune to this ability's effects.
+			// Note: If the Mutant Tank has one or more of these immunity flags or has the same immunity flags as the survivor victim, the immunity is cancelled.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Empty: No immunity flags are immune.
+			// Not empty: These immunity flags are immune.
+			"Immunity Flags"			""
 
 			// The ability can only activate in close areas.
 			// Note: Do not change this setting if you are unsure of how it works.
@@ -10142,6 +12577,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -10171,6 +12620,42 @@
 			// "forever" - 99999 seconds
 			"Fast Cooldown"				"0"
 
+			// The Mutant Tank dashes to damage nearby survivors after incapacitating or killing a survivor.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "weakest" - 1.0 damage
+			// "strongest" - 99999.0 damage
+			"Fast Dash"				"0.0"
+
+			// The Mutant Tank has this many chances out of 100.0% to trigger the dash ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (No chance)
+			// Maximum: 100.0 (Highest chance)
+			// --
+			// Keywords:
+			// "never" - 0% chance
+			// "sometimes"/"unlikely"/"seldom" - 33.3% chance
+			// "maybe" - 50% chance
+			// "often"/"likely"/"frequently" - 66.6% chance
+			// "always" - 100% chance
+			"Fast Dash Chance"			"33.3"
+
+			// The Mutant Tank's dash ability damages survivors that are within this range.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 1.0 (Closest)
+			// Maximum: 99999.0 (Farthest)
+			// --
+			// Keywords:
+			// "closest" - 1.0 range
+			// "farthest" - 99999.0 range
+			"Fast Dash Range"			"150.0"
+
 			// The Mutant Tank's ability effects last this long.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -10188,9 +12673,37 @@
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
 			// --
-			// Minimum: 3.0
-			// Maximum: 10.0
+			// Minimum: 0.1
+			// Maximum: 99.0
 			"Fast Speed"				"5.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Fast Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Fast Chance"				"33.3"
+				"Fast Cooldown"				"0"
+				"Fast Dash"				"0.0"
+				"Fast Dash Chance"			"33.3"
+				"Fast Dash Range"			"150.0"
+				"Fast Duration"				"5"
+				"Fast Speed"				"5.0"
+			}
 		}
 	}
 }
@@ -10211,7 +12724,7 @@
 		// - "Fire Range"
 		// - "Fire Range Chance"
 		// - "Fire Range Cooldown"
-		// "Fire Death" - When the Mutant Tank dies, a fire is created around the Mutant Tank.
+		// "Fire Death" - When the Mutant Tank dies or spawns, a fire is created around the Mutant Tank.
 		// - "Fire Death Chance"
 		// - "Fire Death Range"
 		// "Fire Hit" - When a survivor is hit by the Mutant Tank's claw or rock, or a survivor hits the Mutant Tank with a melee weapon, a fire is created around the survivor.
@@ -10397,6 +12910,20 @@
 			// "hit,ability,rock"/"all" - 7
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -10426,12 +12953,30 @@
 			// "forever" - 99999 seconds
 			"Fire Cooldown"				"0"
 
+			// The Mutant Tank's fires do this much damage.
+			// Note: This is ignored when the "Combo Ability" setting is set to "1".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "weakest" - 1.0 damage
+			// "strongest" - 99999.0 damage
+			"Fire Damage"				"3.0"
+
 			// Enable the Mutant Tank's upon-death range ability.
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
 			// --
-			// 0/"disabled"/"false"/"off"/"no": OFF
-			// 1/"enabled"/"true"/"on"/"yes": ON
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0: OFF
+			// 1: Trigger the range ability when the Mutant Tank dies.
+			// 2: Trigger the range ability when the Mutant Tank spawns.
 			"Fire Death"				"1"
 
 			// The Mutant Tank has this many chances out of 100.0% to trigger the upon-death ability.
@@ -10559,6 +13104,42 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Fire Rock Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Fire Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Pin Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Fire Chance"				"33.3"
+				"Fire Cooldown"				"0"
+				"Fire Damage"				"3.0"
+				"Fire Death"				"1"
+				"Fire Death Chance"			"33.3"
+				"Fire Death Range"			"200.0"
+				"Fire Hit"				"0"
+				"Fire Hit Mode"				"0"
+				"Fire Pin"				"0"
+				"Fire Pin Chance"			"33.3"
+				"Fire Pin Cooldown"			"0"
+				"Fire Range"				"150.0"
+				"Fire Range Chance"			"15.0"
+				"Fire Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -10579,7 +13160,7 @@
 		// - "Fling Range"
 		// - "Fling Range Chance"
 		// - "Fling Range Cooldown"
-		// "Fling Death" - When the Mutant Tank dies, nearby survivors are flung into the air.
+		// "Fling Death" - When the Mutant Tank dies or spawns, nearby survivors are flung into the air.
 		// - "Fling Death Chance"
 		// - "Fling Death Range"
 		// "Fling Hit" - When a survivor is hit by the Mutant Tank's claw or rock, or a survivor hits the Mutant Tank with a melee weapon, the survivor is flung into the air.
@@ -10745,6 +13326,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -10778,8 +13373,14 @@
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
 			// --
-			// 0/"disabled"/"false"/"off"/"no": OFF
-			// 1/"enabled"/"true"/"on"/"yes": ON
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0: OFF
+			// 1: Trigger the range ability when the Mutant Tank dies.
+			// 2: Trigger the range ability when the Mutant Tank spawns.
 			"Fling Death"				"1"
 
 			// The Mutant Tank has this many chances out of 100.0% to trigger the upon-death ability.
@@ -10809,6 +13410,14 @@
 			// "farthest" - 99999.0 range
 			"Fling Death Range"			"200.0"
 
+			// The force of the Mutant Tank's ability.
+			// Note: This setting determines how powerful the force is.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.1
+			// Maximum: 99999.0
+			"Fling Force"				"300.0"
+
 			// Enable the Mutant Tank's claw/rock attack.
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -10829,14 +13438,6 @@
 			// "tank"/"attack" - 1
 			// "survivor"/"hurt" - 2
 			"Fling Hit Mode"			"0"
-
-			// The force of the Mutant Tank's ability.
-			// Note: This setting determines how powerful the force is.
-			// Note: This setting can be overridden for specific players.
-			// --
-			// Minimum: 0.1
-			// Maximum: 99999.0
-			"Fling Force"				"300.0"
 
 			// The distance between a survivor and the Mutant Tank needed to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
@@ -10878,6 +13479,38 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Fling Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Fling Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Fling Chance"				"33.3"
+				"Fling Cooldown"			"0"
+				"Fling Death"				"1"
+				"Fling Death Chance"			"33.3"
+				"Fling Death Range"			"200.0"
+				"Fling Force"				"300.0"
+				"Fling Hit"				"0"
+				"Fling Hit Mode"			"0"
+				"Fling Range"				"150.0"
+				"Fling Range Chance"			"15.0"
+				"Fling Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -11086,6 +13719,31 @@
 			// 4: When the Mutant Tank throws a rock.
 			// 8: When the Mutant Tank jumps.
 			"Fly Type"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Fly Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"30"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Fly Chance"				"33.3"
+				"Fly Cooldown"				"0"
+				"Fly Duration"				"30"
+				"Fly Speed"				"500.0"
+				"Fly Type"				"0"
+			}
 		}
 	}
 }
@@ -11101,7 +13759,7 @@
 {
 	"Tank #1"
 	{
-		// The Mutant Tank takes more damage but becomes stronger.
+		// The Mutant Tank takes more damage while dealing more damage and running faster.
 		// Requires "mt_abilities.smx" to be compiled with "mt_fragile.sp" to work.
 		"Fragile Ability"
 		{
@@ -11231,7 +13889,7 @@
 
 			// The bullet damage received by the Mutant Tank is multiplied by this value.
 			// Note: Damage = Bullet damage x Fragile bullet multiplier
-			// Example: Damage = 30.0 x 5.0 (150.0)
+			// Example: Damage = 30.0 x 5.0 = 150.0
 			// Note: Use the value "1.0" to disable this setting. (Bullet damage x 1.0 = Bullet damage)
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -11290,7 +13948,7 @@
 
 			// The explosive damage received by the Mutant Tank is multiplied by this value.
 			// Note: Damage = Explosive damage x Fragile explosive multiplier
-			// Example: Damage = 30.0 x 5.0 (150.0)
+			// Example: Damage = 30.0 x 5.0 = 150.0
 			// Note: Use the value "1.0" to disable this setting. (Explosive damage x 1.0 = Explosive damage)
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -11300,7 +13958,7 @@
 
 			// The fire damage received by the Mutant Tank is multiplied by this value.
 			// Note: Damage = Fire damage x Fragile fire multiplier
-			// Example: Damage = 30.0 x 3.0 (90.0)
+			// Example: Damage = 30.0 x 3.0 = 90.0
 			// Note: Use the value "1.0" to disable this setting. (Fire damage x 1.0 = Fire damage)
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -11310,7 +13968,7 @@
 
 			// The hittable damage received by the Mutant Tank is multiplied by this value.
 			// Note: Damage = Hittable damage x Fragile hittable multiplier
-			// Example: Damage = 100.0 x 1.5 (150.0)
+			// Example: Damage = 100.0 x 1.5 = 150.0
 			// Note: Use the value "1.0" to disable this setting. (Hittable damage x 1.0 = Hittable damage)
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -11320,7 +13978,7 @@
 
 			// The melee damage received by the Mutant Tank is multiplied by this value.
 			// Note: Damage = Melee damage x Fragile melee multiplier
-			// Example: Damage = 100.0 x 1.5 (150.0)
+			// Example: Damage = 100.0 x 1.5 = 150.0
 			// Note: Use the value "1.0" to disable this setting. (Melee damage x 1.0 = Melee damage)
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -11345,6 +14003,37 @@
 			// Minimum: 0.1
 			// Maximum: 3.0
 			"Fragile Speed Boost"			"1.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Fragile Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"30"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Fragile Bullet Multiplier"		"5.0"
+				"Fragile Chance"			"33.3"
+				"Fragile Cooldown"			"0"
+				"Fragile Damage Boost"			"5.0"
+				"Fragile Duration"			"5"
+				"Fragile Explosive Multiplier"		"5.0"
+				"Fragile Fire Multiplier"		"3.0"
+				"Fragile Hittable Multiplier"		"1.5"
+				"Fragile Melee Multiplier"		"1.5"
+				"Fragile Mode"				"0"
+				"Fragile Speed Boost"			"1.0"
+			}
 		}
 	}
 }
@@ -11366,6 +14055,7 @@
 		// - "Ghost Fade Alpha"
 		// - "Ghost Fade Delay"
 		// - "Ghost Fade Limit"
+		// - "Ghost Fade Phase"
 		// - "Ghost Fade Rate"
 		// - "Ghost Specials"
 		// - "Ghost Specials Chance"
@@ -11564,6 +14254,20 @@
 			// "hit,ability,rock"/"all" - 7
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -11632,6 +14336,13 @@
 			// Minimum: 0 (Fully faded)
 			// Maximum: 255 (No effect)
 			"Ghost Fade Limit"			"0"
+
+			// The Mutant Tank can phase through all damage during the ghost fade effect.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Ghost Fade Phase"			"0"
 
 			// The rate of the Mutant Tank's ghost fade effect.
 			// Note: This setting can be overridden for specific players.
@@ -11750,6 +14461,46 @@
 			// 8: 4th slot only.
 			// 16: 5th slot only.
 			"Ghost Weapon Slots"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Ghost Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"30"
+				"Human Mode"				"1"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Ghost Chance"				"33.3"
+				"Ghost Cooldown"			"0"
+				"Ghost Duration"			"0"
+				"Ghost Fade Alpha"			"2"
+				"Ghost Fade Delay"			"5"
+				"Ghost Fade Limit"			"0"
+				"Ghost Fade Phase"			"0"
+				"Ghost Fade Rate"			"0.1"
+				"Ghost Hit"				"0"
+				"Ghost Hit Mode"			"0"
+				"Ghost Range"				"150.0"
+				"Ghost Range Chance"			"15.0"
+				"Ghost Range Cooldown"			"0"
+				"Ghost Specials"			"1"
+				"Ghost Specials Chance"			"33.3"
+				"Ghost Specials Range"			"500.0"
+				"Ghost Weapon Slots"			"0"
+			}
 		}
 	}
 }
@@ -11934,6 +14685,29 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"God Duration"				"5"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "God Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"God Chance"				"33.3"
+				"God Cooldown"				"0"
+				"God Duration"				"5"
+			}
 		}
 	}
 }
@@ -11951,6 +14725,7 @@
 	{
 		// The Mutant Tank pulls in or pushes away survivors and any other nearby infected, and changes the survivors' gravity.
 		// "Ability Enabled" - Any nearby infected and survivors are pulled in or pushed away.
+		// - "Gravity Flags"
 		// - "Gravity Force"
 		// - "Gravity Radius"
 		// "Ability Enabled" - When a survivor is within range of the Mutant Tank, the survivor's gravity changes.
@@ -11962,6 +14737,7 @@
 		// - "Gravity Cooldown"
 		// - "Gravity Hit Mode"
 		// "Gravity Rock Break" - When the Mutant Tank's rock breaks, it creates a blackhole.
+		// - "Gravity Flags"
 		// - "Gravity Force"
 		// - "Gravity Radius"
 		// - "Gravity Rock Chance"
@@ -12071,6 +14847,19 @@
 			// "forever" - 99999 seconds
 			"Human Range Cooldown"			"0"
 
+			// Human-controlled Mutant Tanks must wait this long before using their rock ability again.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 99999 (Longest)
+			// --
+			// Keywords:
+			// "never"/"disabled"/"false"/"off"/"no" - 0 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Human Rock Cooldown"			"0"
+
 			// The ability can only activate in open areas.
 			// Note: Do not change this setting if you are unsure of how it works.
 			// Note: This setting can be overridden for specific players.
@@ -12161,6 +14950,20 @@
 			// "hit,ability,rock,break"/"all" - 15
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -12202,6 +15005,22 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Gravity Duration"			"5"
+
+			// The Mutant Tank's gravity flags.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 31
+			// --
+			// 0 OR 31: All flags.
+			// 1: Require line-of-sight (LOS) flag.
+			// 2: Use angle pushes flag.
+			// 4: No distance falloff flag.
+			// 8: Push players.
+			// 16: Push physics.
+			"Gravity Flags"				"8"
 
 			// The Mutant Tank's gravity force.
 			// Note: This setting can be overridden for specific players.
@@ -12329,6 +15148,45 @@
 			// Minimum: 0.1
 			// Maximum: 99999.0
 			"Gravity Value"				"0.3"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Gravity Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Human Pin Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Gravity Chance"			"33.3"
+				"Gravity Cooldown"			"0"
+				"Gravity Duration"			"5"
+				"Gravity Flags"				"8"
+				"Gravity Force"				"-50.0"
+				"Gravity Hit"				"0"
+				"Gravity Hit Mode"			"0"
+				"Gravity Pin"				"0"
+				"Gravity Pin Chance"			"33.3"
+				"Gravity Pin Cooldown"			"0"
+				"Gravity Radius"			"750.0"
+				"Gravity Range"				"150.0"
+				"Gravity Range Chance"			"15.0"
+				"Gravity Range Cooldown"		"0"
+				"Gravity Value"				"0.3"
+			}
 		}
 	}
 }
@@ -12624,6 +15482,39 @@
 			// 8: Common infected
 			// 16: Special infected
 			"Gunner Target Type"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Gunner Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Gunner Accuracy"			"2.0"
+				"Gunner Bullets"			"3"
+				"Gunner Chance"				"33.3"
+				"Gunner Clip Size"			"30"
+				"Gunner Cooldown"			"0"
+				"Gunner Damage"				"5.0"
+				"Gunner Duration"			"5.0"
+				"Gunner Glow"				"1"
+				"Gunner Gun Type"			"0"
+				"Gunner Interval"			"1.0"
+				"Gunner Load Time"			"1.0"
+				"Gunner Range"				"500.0"
+				"Gunner Reaction Time"			"1.0"
+				"Gunner Target Type"			"0"
+			}
 		}
 	}
 }
@@ -12842,6 +15733,20 @@
 			// "hit,ability,rock"/"all" - 7
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The distance between an infected and the Mutant Tank needed to trigger the ability.
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -13017,6 +15922,44 @@
 			// Positive numbers: Current health + Health from Tanks
 			// Negative numbers: Current health - Health from Tanks
 			"Health From Tanks"			"500"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Heal Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Heal Absorb Range"			"500.0"
+				"Heal Buffer"				"100.0"
+				"Heal Chance"				"33.3"
+				"Heal Cooldown"				"0"
+				"Heal Duration"				"0"
+				"Heal Glow"				"1"
+				"Heal Hit"				"0"
+				"Heal Hit Mode"				"0"
+				"Heal Interval"				"5.0"
+				"Heal Range"				"150.0"
+				"Heal Range Chance"			"15.0"
+				"Heal Range Cooldown"			"0"
+				"Health From Commons"			"50"
+				"Health From Specials"			"100"
+				"Health From Tanks"			"500"
+			}
 		}
 	}
 }
@@ -13101,7 +16044,7 @@
 
 			// The damage received by the Mutant Tank is multiplied by this value.
 			// Note: Damage = Damage x Hit damage multiplier
-			// Example: Damage = 30.0 x 1.5 (45.0)
+			// Example: Damage = 30.0 x 1.5 = 45.0
 			// Note: Use the value "1.0" to disable this setting. (Damage x 1.0 = Damage)
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -13125,6 +16068,22 @@
 			// 32: Left leg shots only.
 			// 64: Right leg shots only.
 			"Hit Group"				"1"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Hit Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Human Ability"				"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Hit Damage Multiplier"			"1.5"
+				"Hit Group"				"1"
+			}
 		}
 	}
 }
@@ -13307,6 +16266,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -13436,6 +16409,37 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Hurt Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Hurt Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Hurt Chance"				"33.3"
+				"Hurt Cooldown"				"0"
+				"Hurt Damage"				"5.0"
+				"Hurt Duration"				"5"
+				"Hurt Hit"				"0"
+				"Hurt Hit Mode"				"0"
+				"Hurt Interval"				"1.0"
+				"Hurt Range"				"150.0"
+				"Hurt Range Chance"			"15.0"
+				"Hurt Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -13618,6 +16622,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The bullet damage reflected towards survivors by the Mutant Tank is divided by this value.
 			// Note: Damage = Bullet damage/Hypno bullet divisor
 			// Example: Damage = 30.0/20.0 (1.5)
@@ -13642,6 +16660,19 @@
 			// "often"/"likely"/"frequently" - 66.6% chance
 			// "always" - 100% chance
 			"Hypno Chance"				"33.3"
+
+			// These are the RGBA values of the Mutant Tank's shield prop's color.
+			// Note: Any value less than "0" will output a random color.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 1st number = Red
+			// 2nd number = Green
+			// 3rd number = Blue
+			// 4th number = Alpha
+			// --
+			// Keywords:
+			// "rainbow" - cycle through colors constantly.
+			"Hypno Color"				"255,255,255,255"
 
 			// The cooldown for the Mutant Tank's hit ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
@@ -13779,6 +16810,50 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Hypno Range Cooldown"			"0"
+
+			// The Mutant Tank will have a shield that is only visible to hypnotized survivors.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Hypno View"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Hypno Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Hypno Bullet Divisor"			"20.0"
+				"Hypno Chance"				"33.3"
+				"Hypno Color"				"255,255,255,255"
+				"Hypno Cooldown"			"0"
+				"Hypno Duration"			"5.0"
+				"Hypno Explosive Divisor"		"20.0"
+				"Hypno Fire Divisor"			"200.0"
+				"Hypno Hit"				"0"
+				"Hypno Hit Mode"			"0"
+				"Hypno Hittable Divisor"		"20.0"
+				"Hypno Melee Divisor"			"200.0"
+				"Hypno Mode"				"0"
+				"Hypno Range"				"150.0"
+				"Hypno Range Chance"			"15.0"
+				"Hypno Range Cooldown"			"0"
+				"Hypno View"				"0"
+			}
 		}
 	}
 }
@@ -13961,6 +17036,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -14065,6 +17154,35 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Ice Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Ice Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Ice Chance"				"33.3"
+				"Ice Cooldown"				"0"
+				"Ice Duration"				"5.0"
+				"Ice Hit"				"0"
+				"Ice Hit Mode"				"0"
+				"Ice Range"				"150.0"
+				"Ice Range Chance"			"15.0"
+				"Ice Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -14247,6 +17365,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -14337,6 +17469,34 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Idle Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Idle Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Idle Chance"				"33.3"
+				"Idle Cooldown"				"0"
+				"Idle Hit"				"0"
+				"Idle Hit Mode"				"0"
+				"Idle Range"				"150.0"
+				"Idle Range Chance"			"15.0"
+				"Idle Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -14519,6 +17679,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -14623,6 +17797,35 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Invert Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Invert Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Invert Chance"				"33.3"
+				"Invert Cooldown"			"0"
+				"Invert Duration"			"5.0"
+				"Invert Hit"				"0"
+				"Invert Hit Mode"			"0"
+				"Invert Range"				"150.0"
+				"Invert Range Chance"			"15.0"
+				"Invert Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -14799,6 +18002,28 @@
 			// "often"/"likely"/"frequently" - 66.6% chance
 			// "always" - 100% chance
 			"Item Pinata Chance"			"33.3"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Item Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Item Chance"				"33.3"
+				"Item Loadout"				"rifle,pistol,first_aid_kit,pain_pills"
+				"Item Mode"				"0"
+				"Item Pinata"				""
+				"Item Pinata Body"			"1"
+				"Item Pinata Chance"			"33.3"
+			}
 		}
 	}
 }
@@ -15014,6 +18239,20 @@
 			// "hit,ability,rock"/"all" - 7
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -15176,6 +18415,42 @@
 			// "shortest" - 0.1 height
 			// "tallest" - 99999.0 height
 			"Jump Sporadic Height"			"750.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Jump Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Jump Chance"				"33.3"
+				"Jump Cooldown"				"0"
+				"Jump Duration"				"5"
+				"Jump Height"				"300.0"
+				"Jump Hit"				"0"
+				"Jump Hit Mode"				"0"
+				"Jump Interval"				"1.0"
+				"Jump Mode"				"0"
+				"Jump Range"				"150.0"
+				"Jump Range Chance"			"15.0"
+				"Jump Range Cooldown"			"0"
+				"Jump Sporadic Chance"			"33.3"
+				"Jump Sporadic Height"			"750.0"
+			}
 		}
 	}
 }
@@ -15319,6 +18594,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// Removes the death model of the survivor when killed.
 			// Note: Only available in Left 4 Dead 2.
 			// Note: This setting can be overridden for specific players.
@@ -15363,6 +18652,26 @@
 			// "survivor"/"hurt" - 2
 			"Kamikaze Hit Mode"			"0"
 
+			// The amount of damage required to power up the Mutant Tank's kamikaze ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0
+			"Kamikaze Meter"			"0.0"
+
+			// The mode of the Mutant Tank's kamikaze ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0 OR 3: Pick randomly between killing and incapacitating.
+			// 1: Kill instantly.
+			// 2: Incapacitate only.
+			"Kamikaze Mode"				"1"
+
 			// The distance between a survivor and the Mutant Tank needed to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -15389,6 +18698,32 @@
 			// "often"/"likely"/"frequently" - 66.6% chance
 			// "always" - 100% chance
 			"Kamikaze Range Chance"			"15.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Kamikaze Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Kamikaze Body"				"1"
+				"Kamikaze Chance"			"33.3"
+				"Kamikaze Hit"				"0"
+				"Kamikaze Hit Mode"			"0"
+				"Kamikaze Meter"			"0.0"
+				"Kamikaze Mode"				"1"
+				"Kamikaze Range"			"150.0"
+				"Kamikaze Range Chance"			"15.0"
+			}
 		}
 	}
 }
@@ -15571,6 +18906,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -15674,6 +19023,35 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Lag Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Lag Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Lag Chance"				"33.3"
+				"Lag Cooldown"				"0"
+				"Lag Duration"				"5"
+				"Lag Hit"				"0"
+				"Lag Hit Mode"				"0"
+				"Lag Range"				"150.0"
+				"Lag Range Chance"			"15.0"
+				"Lag Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -15817,6 +19195,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -15896,6 +19288,33 @@
 			// "closest" - 1.0 range
 			// "farthest" - 99999.0 range
 			"Laser Range"				"500.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Laser Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Laser Chance"				"33.3"
+				"Laser Cooldown"			"0"
+				"Laser Damage"				"5.0"
+				"Laser Duration"			"5"
+				"Laser Interval"			"1.0"
+				"Laser Range"				"500.0"
+			}
 		}
 	}
 }
@@ -16078,6 +19497,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -16195,6 +19628,36 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Leech Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Leech Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Leech Chance"				"33.3"
+				"Leech Cooldown"			"0"
+				"Leech Duration"			"5"
+				"Leech Hit"				"0"
+				"Leech Hit Mode"			"0"
+				"Leech Interval"			"1.0"
+				"Leech Range"				"150.0"
+				"Leech Range Chance"			"15.0"
+				"Leech Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -16339,6 +19802,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -16406,6 +19883,32 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Lightning Interval"			"1.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Lightning Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Lightning Chance"			"33.3"
+				"Lightning Cooldown"			"0"
+				"Lightning Damage"			"5.0"
+				"Lightning Duration"			"5"
+				"Lightning Interval"			"1.0"
+			}
 		}
 	}
 }
@@ -16507,6 +20010,19 @@
 			// 1: Hold down buttons to keep corresponding abilities activated. Cooldown starts after the player lets go of the buttons.
 			"Human Mode"				"1"
 
+			// Human-controlled Mutant Tanks must wait this long before using their rock ability again.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 99999 (Longest)
+			// --
+			// Keywords:
+			// "never"/"disabled"/"false"/"off"/"no" - 0 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Human Rock Cooldown"			"0"
+
 			// The ability can only activate in open areas.
 			// Note: Do not change this setting if you are unsure of how it works.
 			// Note: This setting can be overridden for specific players.
@@ -16542,6 +20058,20 @@
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
+
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
 
 			// The damage buff multiplier given to nearby special infected. 
 			// Note: This setting can be overridden for specific players.
@@ -16682,12 +20212,86 @@
 			// "farthest" - 99999.0 range
 			"Medic Range"				"500.0"
 
+			// The Mutant Tank's rock heals nearby special infected.
+			// Note: This does not need "Ability Enabled" to be set to "1".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Medic Rock Break"			"0"
+
+			// The Mutant Tank's rock has this many chances out of 100.0% to trigger the rock break ability.
+			// Note: This is ignored when the "Combo Ability" setting is set to "1".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (No chance)
+			// Maximum: 100.0 (Highest chance)
+			// --
+			// Keywords:
+			// "never" - 0% chance
+			// "sometimes"/"unlikely"/"seldom" - 33.3% chance
+			// "maybe" - 50% chance
+			// "often"/"likely"/"frequently" - 66.6% chance
+			// "always" - 100% chance
+			"Medic Rock Chance"			"33.3"
+
+			// The cooldown for the Mutant Tank's rock ability.
+			// Note: This is ignored when the "Combo Ability" setting is set to "1".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 99999 (Longest)
+			// --
+			// Keywords:
+			// "never"/"disabled"/"false"/"off"/"no" - 0 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Medic Rock Cooldown"			"0"
+
 			// The Mutant Tank heals itself when healing nearby special infected.
 			// Note: This setting can be overridden for specific players.
 			// --
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Medic Symbiosis"			"1"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Medic Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Human Pin Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Medic Buff Damage"			"1.25"
+				"Medic Buff Resistance"			"0.75"
+				"Medic Buff Speed"			"1.25"
+				"Medic Chance"				"33.3"
+				"Medic Cooldown"			"0"
+				"Medic Duration"			"0"
+				"Medic Field"				"1"
+				"Medic Field Color"			"0,255,0"
+				"Medic Health"				"25,25,25,25,25,25,25"
+				"Medic Interval"			"5.0"
+				"Medic Max Health"			"250,50,250,100,325,600,8000"
+				"Medic Pin"				"0"
+				"Medic Pin Chance"			"33.3"
+				"Medic Pin Cooldown"			"0"
+				"Medic Range"				"500.0"
+				"Medic Symbiosis"			"1"
+			}
 		}
 	}
 }
@@ -16906,7 +20510,7 @@
 			// "second" - 1 second
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
-			"Meteor Lifetime"				"15.0"
+			"Meteor Lifetime"			"15.0"
 
 			// The mode of the Mutant Tank's meteor shower ability.
 			// Note: This setting can be overridden for specific players.
@@ -16927,6 +20531,34 @@
 			// Minimum: 0.0
 			// Maximum: 200.0
 			"Meteor Radius"				"-180.0,180.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Meteor Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Meteor Chance"				"33.3"
+				"Meteor Cooldown"			"0"
+				"Meteor Damage"				"5.0"
+				"Meteor Duration"			"5"
+				"Meteor Interval"			"0.6"
+				"Meteor Lifetime"			"15.0"
+				"Meteor Mode"				"0"
+				"Meteor Radius"				"-180.0,180.0"
+			}
 		}
 	}
 }
@@ -17122,6 +20754,30 @@
 			// 16: Jockey (Switches to Hunter in Left 4 Dead 1.)
 			// 32: Charger (Switches to Smoker in Left 4 Dead 1.)
 			"Minion Types"				"63"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Minion Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Minion Amount"				"5"
+				"Minion Chance"				"33.3"
+				"Minion Cooldown"			"0"
+				"Minion Lifetime"			"0.0"
+				"Minion Remove"				"1"
+				"Minion Replace"			"1"
+				"Minion Types"				"63"
+			}
 		}
 	}
 }
@@ -17148,15 +20804,6 @@
 			// Not empty: These access flags have access.
 			"Access Flags"				""
 
-			// Use this ability in conjunction with other abilities.
-			// Note: Only use this when "Spawn Type" is set to "4" for the Mutant Tank.
-			// Note: This setting does not affect human-controlled Mutant Tanks unless the "Human Ability" setting is set to "2".
-			// Note: This setting can be overridden for specific players.
-			// --
-			// 0/"disabled"/"false"/"off"/"no": OFF
-			// 1/"enabled"/"true"/"on"/"yes": ON
-			"Combo Ability"				"0"
-
 			// The ability can only activate in close areas.
 			// Note: Do not change this setting if you are unsure of how it works.
 			// Note: This setting can be overridden for specific players.
@@ -17168,6 +20815,15 @@
 			// "disabled"/"false"/"off"/"no" - 0.0 range
 			// "farthest" - 99999.0 range
 			"Close Areas Only"			"0.0"
+
+			// Use this ability in conjunction with other abilities.
+			// Note: Only use this when "Spawn Type" is set to "4" for the Mutant Tank.
+			// Note: This setting does not affect human-controlled Mutant Tanks unless the "Human Ability" setting is set to "2".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Combo Ability"				"0"
 
 			// Allow human-controlled Mutant Tanks to use this ability.
 			// Note: This setting can be overridden for specific players.
@@ -17257,6 +20913,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -17310,6 +20980,30 @@
 			// "closest" - 1.0 range
 			// "farthest" - 99999.0 range
 			"Necro Range"				"500.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Necro Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Necro Chance"				"33.3"
+				"Necro Cooldown"			"0"
+				"Necro Duration"			"0"
+				"Necro Range"				"500.0"
+			}
 		}
 	}
 }
@@ -17492,6 +21186,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -17596,6 +21304,35 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Nullify Range Cooldown"		"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Nullify Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Nullify Chance"			"33.3"
+				"Nullify Cooldown"			"0"
+				"Nullify Duration"			"5.0"
+				"Nullify Hit"				"0"
+				"Nullify Hit Mode"			"0"
+				"Nullify Range"				"150.0"
+				"Nullify Range Chance"			"15.0"
+				"Nullify Range Cooldown"		"0"
+			}
 		}
 	}
 }
@@ -17731,6 +21468,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -17791,6 +21542,31 @@
 			// "closest" - 1.0 range
 			// "farthest" - 99999.0 range
 			"Omni Range"				"500.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Omni Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Omni Chance"				"33.3"
+				"Omni Cooldown"				"0"
+				"Omni Duration"				"5"
+				"Omni Mode"				"0"
+				"Omni Range"				"500.0"
+			}
 		}
 	}
 }
@@ -17981,6 +21757,29 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Panic Interval"			"5.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Panic Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Panic Chance"				"33.3"
+				"Panic Cooldown"			"0"
+				"Panic Duration"			"0"
+				"Panic Interval"			"5.0"
+			}
 		}
 	}
 }
@@ -18163,6 +21962,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -18292,6 +22105,37 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Pimp Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Pimp Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Pimp Chance"				"33.3"
+				"Pimp Cooldown"				"0"
+				"Pimp Damage"				"5"
+				"Pimp Duration"				"5"
+				"Pimp Hit"				"0"
+				"Pimp Hit Mode"				"0"
+				"Pimp Interval"				"1.0"
+				"Pimp Range"				"150.0"
+				"Pimp Range Chance"			"15.0"
+				"Pimp Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -18312,7 +22156,7 @@
 		// - "Puke Range"
 		// - "Puke Range Chance"
 		// - "Puke Range Cooldown"
-		// "Puke Death" - When the Mutant Tank dies, nearby survivors are puked on.
+		// "Puke Death" - When the Mutant Tank dies or spawns, nearby survivors are puked on.
 		// - "Puke Death Chance"
 		// - "Puke Death Range"
 		// "Puke Hit" - When a survivor is hit by the Mutant Tank's claw or rock, or a survivor hits the Mutant Tank with a melee weapon, the Mutant Tank pukes on the survivor.
@@ -18477,6 +22321,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -18510,8 +22368,14 @@
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
 			// --
-			// 0/"disabled"/"false"/"off"/"no": OFF
-			// 1/"enabled"/"true"/"on"/"yes": ON
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0: OFF
+			// 1: Trigger the range ability when the Mutant Tank dies.
+			// 2: Trigger the range ability when the Mutant Tank spawns.
 			"Puke Death"				"1"
 
 			// The Mutant Tank has this many chances out of 100.0% to trigger the upon-death ability.
@@ -18602,6 +22466,37 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Puke Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Puke Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Puke Chance"				"33.3"
+				"Puke Cooldown"				"0"
+				"Puke Death"				"1"
+				"Puke Death Chance"			"33.3"
+				"Puke Death Range"			"200.0"
+				"Puke Hit"				"0"
+				"Puke Hit Mode"				"0"
+				"Puke Range"				"150.0"
+				"Puke Range Chance"			"15.0"
+				"Puke Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -18786,6 +22681,16 @@
 			// "forever" - 99999 seconds
 			"Pyro Duration"				"5"
 
+			// The fire damage received by the Mutant Tank is divided by this value.
+			// Note: Damage = Fire damage/Pyro fire divisor
+			// Example: Damage = 300.0/200.0 (1.5)
+			// Note: Use the value "1.0" to disable this setting. (Fire damage/1.0 = Fire damage)
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 1.0
+			// Maximum: 99999.0
+			"Pyro Fire Divisor"			"1.0"
+
 			// The mode of the Mutant Tank's damage and speed boosts.
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -18811,6 +22716,33 @@
 			// Minimum: 0.1
 			// Maximum: 3.0
 			"Pyro Speed Boost"			"1.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Pyro Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Pyro Chance"				"33.3"
+				"Pyro Cooldown"				"0"
+				"Pyro Damage Boost"			"5.0"
+				"Pyro Duration"				"5"
+				"Pyro Fire Divisor"			"1.0"
+				"Pyro Mode"				"0"
+				"Pyro Reignite"				"1"
+				"Pyro Speed Boost"			"1.0"
+			}
 		}
 	}
 }
@@ -18993,6 +22925,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -19117,6 +23063,303 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Quiet Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Quiet Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Quiet Chance"				"33.3"
+				"Quiet Cooldown"			"0"
+				"Quiet Duration"			"5.0"
+				"Quiet Filter"				"0"
+				"Quiet Hit"				"0"
+				"Quiet Hit Mode"			"0"
+				"Quiet Range"				"150.0"
+				"Quiet Range Chance"			"15.0"
+				"Quiet Range Cooldown"			"0"
+			}
+		}
+	}
+}
+```
+</details>
+
+##### Recall Ability
+<details>
+	<summary>Click to expand!</summary>
+
+```
+"Mutant Tanks"
+{
+	"Tank #1"
+	{
+		// The Mutant Tank time travels to annoy survivors.
+		// "Ability Enabled" - When the Mutant Tank is below certain health, it recalls to the past.
+		// - "Recall Rewind Chance"
+		// - "Recall Rewind Cleanse"
+		// - "Recall Rewind Cooldown"
+		// - "Recall Rewind Lifetime"
+		// - "Recall Rewind Mode"
+		// - "Recall Rewind Threshold"
+		// "Ability Enabled" - When the Mutant Tank spawns, it randomly blinks a certain distance in different directions.
+		// - "Recall Blink Chance"
+		// - "Recall Blink Cooldown"
+		// - "Recall Blink Count"
+		// - "Recall Blink Range"
+		// Requires "mt_abilities2.smx" to be compiled with "mt_recall.sp" to work.
+		"Recall Ability"
+		{
+			// Admins with one or more of these access flags have access to this ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Empty: No access flags have access.
+			// Not empty: These access flags have access.
+			"Access Flags"				""
+
+			// The ability can only activate in close areas.
+			// Note: Do not change this setting if you are unsure of how it works.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0 (Farthest)
+			// --
+			// Keywords:
+			// "disabled"/"false"/"off"/"no" - 0.0 range
+			// "farthest" - 99999.0 range
+			"Close Areas Only"			"0.0"
+
+			// Allow human-controlled Mutant Tanks to use this ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0: OFF
+			// 1: ON, players can use buttons to activate abilities.
+			// 2: ON, abilities will activate automatically.
+			"Human Ability"				"0"
+
+			// Determines how many times human-controlled Mutant Tanks can use their abilities in one life.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 99999
+			// --
+			// Keywords:
+			// "none"/"off" - 0 ammo
+			// "infinite" - 99999 ammo
+			"Human Ammo"				"5"
+
+			// Human-controlled Mutant Tanks must wait this long before using their abilities again.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 99999 (Longest)
+			// --
+			// Keywords:
+			// "never"/"disabled"/"false"/"off"/"no" - 0 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Human Cooldown"			"0"
+
+			// Human-controlled Mutant Tanks must wait this long before using their range ability again.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 99999 (Longest)
+			// --
+			// Keywords:
+			// "never"/"disabled"/"false"/"off"/"no" - 0 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Human Range Cooldown"			"0"
+
+			// The ability can only activate in open areas.
+			// Note: Do not change this setting if you are unsure of how it works.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0 (Farthest)
+			// --
+			// Keywords:
+			// "disabled"/"false"/"off"/"no" - 0.0 range
+			// "farthest" - 99999.0 range
+			"Open Areas Only"			"0.0"
+
+			// The ability is only effective toward human survivors.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 32
+			// --
+			// 0: OFF
+			// 1-32: ON, the number of human survivors required to be present for this ability to be effective.
+			"Requires Humans"			"0"
+
+			// Enable this ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0: OFF
+			// 1: ON, the Mutant Tank can recall to the past.
+			// 2: ON, the Mutant Tank can blink in any direction.
+			// 3: ON, the Mutant Tank can do both.
+			"Ability Enabled"			"0"
+
+			// Display a message whenever the abilities activate/deactivate.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0: OFF
+			// 1: Display message only when "Ability Enabled" is set to "1" or "3".
+			// 2: Display message only when "Ability Enabled" is set to "2" or "3".
+			"Ability Message"			"0"
+
+			// The Mutant Tank has this many chances out of 100.0% to trigger the blink ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (No chance)
+			// Maximum: 100.0 (Highest chance)
+			// --
+			// Keywords:
+			// "never" - 0% chance
+			// "sometimes"/"unlikely"/"seldom" - 33.3% chance
+			// "maybe" - 50% chance
+			// "often"/"likely"/"frequently" - 66.6% chance
+			// "always" - 100% chance
+			"Recall Blink Chance"			"50.0"
+
+			// The cooldown for the Mutant Tank's blink ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 99999 (Longest)
+			// --
+			// Keywords:
+			// "never"/"disabled"/"false"/"off"/"no" - 0 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Recall Blink Cooldown"			"0"
+
+			// The Mutant Tank can blink this many times before a cooldown is triggered.
+			// Note: This setting is ignored when the "Recall Blink Cooldown" setting is set to "0".
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 99999 (Highest)
+			"Recall Blink Count"			"5"
+
+			// The distance of the Mutant Tank's blink ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 1.0 (Closest)
+			// Maximum: 99999.0 (Farthest)
+			// --
+			// Keywords:
+			// "closest" - 1.0 range
+			// "farthest" - 99999.0 range
+			"Recall Blink Range"			"150.0"
+
+			// The Mutant Tank has this many chances out of 100.0% to trigger the rewind ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (No chance)
+			// Maximum: 100.0 (Highest chance)
+			// --
+			// Keywords:
+			// "never" - 0% chance
+			// "sometimes"/"unlikely"/"seldom" - 33.3% chance
+			// "maybe" - 50% chance
+			// "often"/"likely"/"frequently" - 66.6% chance
+			// "always" - 100% chance
+			"Recall Rewind Chance"			"100.0"
+
+			// The Mutant Tank will be cleansed from bile bombs and fires when using its rewind ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0/"disabled"/"false"/"off"/"no": OFF
+			// 1/"enabled"/"true"/"on"/"yes": ON
+			"Recall Rewind Cleanse"			"1"
+
+			// The cooldown for the Mutant Tank's rewind ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0 (OFF)
+			// Maximum: 99999 (Longest)
+			// --
+			// Keywords:
+			// "never"/"disabled"/"false"/"off"/"no" - 0 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Recall Rewind Cooldown"		"5"
+
+			// This is how far in seconds that the Mutant Tank's rewind ability can go back to.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 1
+			// Maximum: 30
+			"Recall Rewind Lifetime"		"30"
+
+			// The mode of the Mutant Tank's rewind ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// 0: Both
+			// 1: Rewind health only.
+			// 2: Rewind location only.
+			"Recall Rewind Mode"			"0"
+
+			// The percentage threshold that the Mutant Tank's health needs to be under to trigger the rewind ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 1.0 (Full)
+			"Recall Rewind Threshold"		"0.5"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Recall Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Recall Blink Chance"			"50.0"
+				"Recall Blink Cooldown"			"0"
+				"Recall Blink Count"			"5"
+				"Recall Blink Range"			"150.0"
+				"Recall Rewind Chance"			"100.0"
+				"Recall Rewind Cleanse"			"1"
+				"Recall Rewind Cooldown"		"5"
+				"Recall Rewind Lifetime"		"30"
+				"Recall Rewind Mode"			"0"
+				"Recall Rewind Threshold"		"0.5"
+			}
 		}
 	}
 }
@@ -19299,6 +23542,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -19403,6 +23660,35 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Recoil Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Recoil Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Recoil Chance"				"33.3"
+				"Recoil Cooldown"			"0"
+				"Recoil Duration"			"5.0"
+				"Recoil Hit"				"0"
+				"Recoil Hit Mode"			"0"
+				"Recoil Range"				"150.0"
+				"Recoil Range Chance"			"15.0"
+				"Recoil Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -19428,6 +23714,14 @@
 			// Empty: No access flags have access.
 			// Not empty: These access flags have access.
 			"Access Flags"				""
+
+			// Admins with one or more of these immunity flags are immune to this ability's effects.
+			// Note: If the Mutant Tank has one or more of these immunity flags or has the same immunity flags as the survivor victim, the immunity is cancelled.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Empty: No immunity flags are immune.
+			// Not empty: These immunity flags are immune.
+			"Immunity Flags"			""
 
 			// The ability can only activate in close areas.
 			// Note: Do not change this setting if you are unsure of how it works.
@@ -19538,6 +23832,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -19604,12 +23912,62 @@
 			// "forever" - 99999 seconds
 			"Regen Interval"			"1.0"
 
+			// The Mutant Tank leeches this much health from each nearby survivor each time.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: -1000000
+			// Maximum: 1000000
+			// --
+			// Positive numbers: Current health + Regen leech
+			// Negative numbers: Current health - Regen leech
+			"Regen Leech"				"0"
+
+			// The distance between a survivor and the Mutant Tank needed to leech health.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 1.0 (Closest)
+			// Maximum: 99999.0 (Farthest)
+			// --
+			// Keywords:
+			// "closest" - 1.0 range
+			// "farthest" - 99999.0 range
+			"Regen Leech Range"			"500.0"
+
 			// The Mutant Tank stops regenerating health at this value.
 			// Note: This setting can be overridden for specific players.
 			// --
 			// Minimum: 1
 			// Maximum: 1000000
 			"Regen Limit"				"1000000"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Regen Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Regen Chance"				"33.3"
+				"Regen Cooldown"			"0"
+				"Regen Duration"			"0"
+				"Regen Health"				"1"
+				"Regen Interval"			"1.0"
+				"Regen Leech"				"0"
+				"Regen Leech Range"			"500.0"
+				"Regen Limit"				"1000000"
+			}
 		}
 	}
 }
@@ -19759,6 +24117,25 @@
 			// 0: OFF, use the randomization feature.
 			// 1-500: ON, the type to respawn as.
 			"Respawn Type"				"0-0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Respawn Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Respawn Amount"			"1"
+				"Respawn Chance"			"33.3"
+				"Respawn Type"				"0-0"
+			}
 		}
 	}
 }
@@ -19941,6 +24318,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -20049,6 +24440,36 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Restart Range Cooldown"		"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Restart Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Restart Chance"			"33.3"
+				"Restart Cooldown"			"0"
+				"Restart Hit"				"0"
+				"Restart Hit Mode"			"0"
+				"Restart Loadout"			"smg,pistol,pain_pills"
+				"Restart Mode"				"1"
+				"Restart Range"				"150.0"
+				"Restart Range Chance"			"15.0"
+				"Restart Range Cooldown"		"0"
+			}
 		}
 	}
 }
@@ -20266,6 +24687,32 @@
 			// Minimum: 0.0
 			// Maximum: 5.0
 			"Rock Radius"				"-1.25,1.25"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Rock Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Rock Chance"				"33.3"
+				"Rock Cooldown"				"0"
+				"Rock Damage"				"5"
+				"Rock Duration"				"5"
+				"Rock Interval"				"0.2"
+				"Rock Radius"				"-1.25,1.25"
+			}
 		}
 	}
 }
@@ -20448,6 +24895,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// Removes the death model of the survivor when killed.
 			// Note: Only available in Left 4 Dead 2.
 			// Note: This setting can be overridden for specific players.
@@ -20485,6 +24946,20 @@
 			// "forever" - 99999 seconds
 			"Rocket Cooldown"			"0"
 
+			// The countdown before activating the Mutant Tank's rocket ability.
+			// Note: During the countdown phase, survivors can hide indoors to avoid dying.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Rocket Countdown"			"0.0"
+
 			// The Mutant Tank sends survivors into space after this many seconds passes upon triggering the ability.
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -20518,6 +24993,19 @@
 			// "tank"/"attack" - 1
 			// "survivor"/"hurt" - 2
 			"Rocket Hit Mode"			"0"
+
+			// The mode of the Mutant Tank's rocket ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0 OR 3: Pick randomly between killing and incapacitating.
+			// 1: Kill instantly.
+			// 2: Incapacitate only.
+			"Rocket Mode"				"1"
 
 			// The distance between a survivor and the Mutant Tank needed to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
@@ -20559,6 +25047,38 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Rocket Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Rocket Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Rocket Body"				"1"
+				"Rocket Chance"				"33.3"
+				"Rocket Cooldown"			"0"
+				"Rocket Countdown"			"0.0"
+				"Rocket Delay"				"1.0"
+				"Rocket Hit"				"0"
+				"Rocket Hit Mode"			"0"
+				"Rocket Mode"				"1"
+				"Rocket Range"				"150.0"
+				"Rocket Range Chance"			"15.0"
+				"Rocket Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -20579,7 +25099,7 @@
 		// - "Shake Range"
 		// - "Shake Range Chance"
 		// - "Shake Range Cooldown"
-		// "Shake Death" - When the Mutant Tank dies, nearby survivors' screens are shaken.
+		// "Shake Death" - When the Mutant Tank dies or spawns, nearby survivors' screens are shaken.
 		// - "Shake Death Chance"
 		// - "Shake Death Range"
 		// "Shake Hit" - When a survivor is hit by the Mutant Tank's claw or rock, or a survivor hits the Mutant Tank with a melee weapon, the survivor's screen is shaken.
@@ -20744,6 +25264,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -20777,8 +25311,14 @@
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
 			// --
-			// 0/"disabled"/"false"/"off"/"no": OFF
-			// 1/"enabled"/"true"/"on"/"yes": ON
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0: OFF
+			// 1: Trigger the range ability when the Mutant Tank dies.
+			// 2: Trigger the range ability when the Mutant Tank spawns.
 			"Shake Death"				"1"
 
 			// The Mutant Tank has this many chances out of 100.0% to trigger the upon-death ability.
@@ -20896,6 +25436,39 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Shake Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Shake Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Shake Chance"				"33.3"
+				"Shake Cooldown"			"0"
+				"Shake Death"				"1"
+				"Shake Death Chance"			"33.3"
+				"Shake Death Range"			"200.0"
+				"Shake Duration"			"5"
+				"Shake Hit"				"0"
+				"Shake Hit Mode"			"0"
+				"Shake Interval"			"1.0"
+				"Shake Range"				"150.0"
+				"Shake Range Chance"			"15.0"
+				"Shake Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -21054,6 +25627,18 @@
 			// "always" - 100% chance
 			"Shield Chance"				"33.3"
 
+			// This percentage of the Mutant Tank's shielded damage is converted into damage boost.
+			// Note: Damage boost can be decreased when using the right damage type against the shield.
+			// Note: Damage boost can be increased when using the wrong damage type against the shield.
+			// Note: Damage boost will instantly deplete when the shield breaks.
+			// Note: Boost = ((Damage x Shield Convert Percentage) / 10000.0) + 1.0
+			// Example: Boost = ((8000.0 x 0.8) / 10000.0) + 1 = 1.64
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 1.0 (Full)
+			"Shield Convert Percentage"		"0.0"
+
 			// These are the RGBA values of the Mutant Tank's shield prop's color.
 			// Note: Any value less than "0" will output a random color.
 			// Note: This setting can be overridden for specific players.
@@ -21193,6 +25778,39 @@
 			// 4: Fire-based (Requires fires to break shield.)
 			// 8: Melee-based (Requires melee weapons to break shield.)
 			"Shield Type"				"2"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Shield Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Shield Chance"				"33.3"
+				"Shield Convert Percentage"		"0.0"
+				"Shield Color"				"255,255,255,255"
+				"Shield Cooldown"			"0"
+				"Shield Delay"				"5"
+				"Shield Display Health"			"11"
+				"Shield Display Health Type"		"2"
+				"Shield Duration"			"0"
+				"Shield Glow"				"1"
+				"Shield Health"				"0"
+				"Shield Health Characters"		"],="
+				"Shield Throw Chance"			"100.0"
+				"Shield Type"				"2"
+			}
 		}
 	}
 }
@@ -21213,7 +25831,7 @@
 		// - "Shove Range"
 		// - "Shove Range Chance"
 		// - "Shove Range Cooldown"
-		// "Shove Death" - When the Mutant Tank dies, nearby survivors are shoved.
+		// "Shove Death" - When the Mutant Tank dies or spawns, nearby survivors are shoved.
 		// - "Shove Death Chance"
 		// - "Shove Death Range"
 		// "Shove Hit" - When a survivor is hit by the Mutant Tank's claw or rock, or a survivor hits the Mutant Tank with a melee weapon, the survivor is shoved repeatedly.
@@ -21378,6 +25996,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -21411,8 +26043,14 @@
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
 			// --
-			// 0/"disabled"/"false"/"off"/"no": OFF
-			// 1/"enabled"/"true"/"on"/"yes": ON
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0: OFF
+			// 1: Trigger the range ability when the Mutant Tank dies.
+			// 2: Trigger the range ability when the Mutant Tank spawns.
 			"Shove Death"				"1"
 
 			// The Mutant Tank has this many chances out of 100.0% to trigger the upon-death ability.
@@ -21530,6 +26168,39 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Shove Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Shove Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Shove Chance"				"33.3"
+				"Shove Cooldown"			"0"
+				"Shove Death"				"1"
+				"Shove Death Chance"			"33.3"
+				"Shove Death Range"			"200.0"
+				"Shove Duration"			"5"
+				"Shove Hit"				"0"
+				"Shove Hit Mode"			"0"
+				"Shove Interval"			"1.0"
+				"Shove Range"				"150.0"
+				"Shove Range Chance"			"15.0"
+				"Shove Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -21712,6 +26383,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -21831,6 +26516,37 @@
 			// Minimum: 0.1
 			// Maximum: 0.99
 			"Slow Speed"				"0.25"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Slow Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Slow Chance"				"33.3"
+				"Slow Cooldown"				"0"
+				"Slow Duration"				"5.0"
+				"Slow Hit"				"0"
+				"Slow Hit Mode"				"0"
+				"Slow Incline"				"1"
+				"Slow Range"				"150.0"
+				"Slow Range Chance"			"15.0"
+				"Slow Range Cooldown"			"0"
+				"Slow Speed"				"0.25"
+			}
 		}
 	}
 }
@@ -22013,6 +26729,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// Removes the death model of the survivor when killed.
 			// Note: Only available in Left 4 Dead 2.
 			// Note: This setting can be overridden for specific players.
@@ -22071,6 +26801,26 @@
 			// "survivor"/"hurt" - 2
 			"Smash Hit Mode"			"0"
 
+			// The amount of damage required to power up the Mutant Tank's smash ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0
+			"Smash Meter"				"0.0"
+
+			// The mode of the Mutant Tank's smash ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0 OR 3: Pick randomly between killing and incapacitating.
+			// 1: Kill instantly.
+			// 2: Incapacitate only.
+			"Smash Mode"				"1"
+
 			// The distance between a survivor and the Mutant Tank needed to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -22111,6 +26861,37 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Smash Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Smash Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Smash Body"				"1"
+				"Smash Chance"				"33.3"
+				"Smash Cooldown"			"0"
+				"Smash Hit"				"0"
+				"Smash Hit Mode"			"0"
+				"Smash Meter"				"0.0"
+				"Smash Mode"				"1"
+				"Smash Range"				"150.0"
+				"Smash Range Chance"			"15.0"
+				"Smash Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -22293,6 +27074,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// Removes the death model of the survivor when killed.
 			// Note: Only available in Left 4 Dead 2.
 			// Note: This setting can be overridden for specific players.
@@ -22330,6 +27125,20 @@
 			// "forever" - 99999 seconds
 			"Smite Cooldown"			"0"
 
+			// The countdown before activating the Mutant Tank's smite ability.
+			// Note: During the countdown phase, survivors can heal themselves to avoid dying.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0.0 (OFF)
+			// Maximum: 99999.0
+			// --
+			// Keywords:
+			// "milli"/"millisecond" - 0.1 seconds
+			// "second" - 1 second
+			// "minute" - 1 minute
+			// "forever" - 99999 seconds
+			"Smite Countdown"			"0.0"
+
 			// Enable the Mutant Tank's claw/rock attack.
 			// Note: This setting does not need the "Ability Enabled" setting to be set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -22350,6 +27159,19 @@
 			// "tank"/"attack" - 1
 			// "survivor"/"hurt" - 2
 			"Smite Hit Mode"			"0"
+
+			// The mode of the Mutant Tank's smite ability.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Add up numbers together for different results.
+			// --
+			// Minimum: 0
+			// Maximum: 3
+			// --
+			// 0 OR 3: Pick randomly between killing and incapacitating.
+			// 1: Kill instantly.
+			// 2: Incapacitate only.
+			"Smite Mode"				"1"
 
 			// The distance between a survivor and the Mutant Tank needed to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
@@ -22391,6 +27213,37 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Smite Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Smite Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Smite Body"				"1"
+				"Smite Chance"				"33.3"
+				"Smite Cooldown"			"0"
+				"Smite Countdown"			"0.0"
+				"Smite Hit"				"0"
+				"Smite Hit Mode"			"0"
+				"Smite Mode"				"1"
+				"Smite Range"				"150.0"
+				"Smite Range Chance"			"15.0"
+				"Smite Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -22595,6 +27448,31 @@
 			// Minimum: 0.1
 			// Maximum: 1.0
 			"Spam Interval"				"0.5"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Spam Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Spam Chance"				"33.3"
+				"Spam Cooldown"				"0"
+				"Spam Damage"				"5"
+				"Spam Duration"				"5"
+				"Spam Interval"				"0.5"
+			}
 		}
 	}
 }
@@ -22738,6 +27616,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -22817,6 +27709,33 @@
 			// "closest" - 1.0 range
 			// "farthest" - 99999.0 range
 			"Splash Range"				"500.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Splash Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Splash Chance"				"33.3"
+				"Splash Cooldown"			"0"
+				"Splash Damage"				"5.0"
+				"Splash Duration"			"0"
+				"Splash Interval"			"5.0"
+				"Splash Range"				"500.0"
+			}
 		}
 	}
 }
@@ -23000,6 +27919,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -23061,7 +27994,7 @@
 			// "both"/"all" - 0
 			// "tank"/"attack" - 1
 			// "survivor"/"hurt" - 2
-			"Splatter Hit Mode"				"0"
+			"Splatter Hit Mode"			"0"
 
 			// The Mutant Tank splatters survivors' screens every time this many seconds passes.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
@@ -23142,6 +28075,37 @@
 			// 18: Burning
 			// 19: Lightning
 			"Splatter Type"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Splatter Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Splatter Chance"			"33.3"
+				"Splatter Cooldown"			"0"
+				"Splatter Duration"			"5"
+				"Splatter Hit"				"0"
+				"Splatter Hit Mode"			"0"
+				"Splatter Interval"			"1.0"
+				"Splatter Range"			"150.0"
+				"Splatter Range Chance"			"15.0"
+				"Splatter Range Cooldown"		"0"
+				"Splatter Type"				"0"
+			}
 		}
 	}
 }
@@ -23293,7 +28257,7 @@
 			// "second" - 1 second
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
-			"Throw Car Lifetime"				"10.0"
+			"Throw Car Lifetime"			"10.0"
 
 			// The Mutant Tank throws these cars.
 			// Note: This setting can be overridden for specific players.
@@ -23432,6 +28396,37 @@
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Throw Witch Remove"			"1"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Throw Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Throw Car Lifetime"			"10.0"
+				"Throw Car Options"			"0"
+				"Throw Car Owner"			"1"
+				"Throw Chance"				"33.3"
+				"Throw Cooldown"			"0"
+				"Throw Infected Amount"			"2"
+				"Throw Infected Lifetime"		"0.0"
+				"Throw Infected Options"		"0"
+				"Throw Infected Remove"			"1"
+				"Throw Witch Amount"			"3"
+				"Throw Witch Damage"			"5.0"
+				"Throw Witch Lifetime"			"0.0"
+				"Throw Witch Remove"			"1"
+			}
 		}
 	}
 }
@@ -23609,6 +28604,29 @@
 			// Minimum: 0.1
 			// Maximum: 99999.0
 			"Track Speed"				"500.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Track Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Track Chance"				"33.3"
+				"Track Cooldown"			"0"
+				"Track Glow"				"1"
+				"Track Mode"				"1"
+				"Track Speed"				"500.0"
+			}
 		}
 	}
 }
@@ -23624,7 +28642,7 @@
 {
 	"Tank #1"
 	{
-		// The Mutant Tank activates ultimate mode when low on health to gain temporary godmode and damage boost.
+		// The Mutant Tank activates ultimate mode when low on health to gain temporary god mode and damage boost.
 		// Requires "mt_abilities2.smx" to be compiled with "mt_ultimate.sp" to work.
 		"Ultimate Ability"
 		{
@@ -23807,6 +28825,32 @@
 			// Minimum: 0.1
 			// Maximum: 1.0 (Full health)
 			"Ultimate Health Portion"		"0.5"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Ultimate Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ultimate Amount"			"1"
+				"Ultimate Chance"			"33.3"
+				"Ultimate Cooldown"			"0"
+				"Ultimate Damage Boost"			"1.2"
+				"Ultimate Damage Required"		"200.0"
+				"Ultimate Duration"			"5"
+				"Ultimate Health Limit"			"100"
+				"Ultimate Health Portion"		"0.5"
+			}
 		}
 	}
 }
@@ -23957,6 +29001,26 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Undead Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Undead Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Undead Amount"				"1"
+				"Undead Chance"				"33.3"
+				"Undead Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -24077,13 +29141,33 @@
 
 			// The health received by the Mutant Tank is multiplied by this value.
 			// Note: Health = Health x Vampire health multiplier
-			// Example: Health = 1000.0 x 5.0 (5000.0)
+			// Example: Health = 1000.0 x 5.0 = 5000.0
 			// Note: Use the value "1.0" to disable this setting. (Health x 1.0 = Health)
 			// Note: This setting can be overridden for specific players.
 			// --
 			// Minimum: 1.0
 			// Maximum: 99999.0
 			"Vampire Health Multiplier"		"1.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Vampire Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Vampire Chance"			"33.3"
+				"Vampire Health"			"0"
+				"Vampire Health Multiplier"		"1.0"
+			}
 		}
 	}
 }
@@ -24266,6 +29350,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -24376,6 +29474,36 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Vision Range Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Vision Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Vision Chance"				"33.3"
+				"Vision Cooldown"			"0"
+				"Vision Duration"			"5"
+				"Vision FOV"				"160"
+				"Vision Hit"				"0"
+				"Vision Hit Mode"			"0"
+				"Vision Range"				"150.0"
+				"Vision Range Chance"			"15.0"
+				"Vision Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -24614,6 +29742,20 @@
 			// "hit,ability,rock,break"/"all" - 15
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -24780,6 +29922,43 @@
 			// "minute" - 1 minute
 			// "forever" - 99999 seconds
 			"Warp Rock Cooldown"			"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Warp Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Human Pin Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Warp Chance"				"33.3"
+				"Warp Cooldown"				"0"
+				"Warp Duration"				"0"
+				"Warp Hit"				"0"
+				"Warp Hit Mode"				"0"
+				"Warp Interval"				"5.0"
+				"Warp Mode"				"0"
+				"Warp Pin"				"0"
+				"Warp Pin Chance"			"33.3"
+				"Warp Pin Cooldown"			"0"
+				"Warp Range"				"150.0"
+				"Warp Range Chance"			"15.0"
+				"Warp Range Cooldown"			"0"
+			}
 		}
 	}
 }
@@ -24962,6 +30141,20 @@
 			// "both"/"all"/"hit,ability" - 3
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The axis of the Mutant Tank's whirl effect.
 			// Note: This setting can be overridden for specific players.
 			// --
@@ -25087,6 +30280,37 @@
 			// Minimum: 1.0
 			// Maximum: 99999.0
 			"Whirl Speed"				"500.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Whirl Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Range Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Whirl Axis"				"0"
+				"Whirl Chance"				"33.3"
+				"Whirl Cooldown"			"0"
+				"Whirl Duration"			"5"
+				"Whirl Hit"				"0"
+				"Whirl Hit Mode"			"0"
+				"Whirl Range"				"150.0"
+				"Whirl Range Chance"			"15.0"
+				"Whirl Range Cooldown"			"0"
+				"Whirl Speed"				"500.0"
+			}
 		}
 	}
 }
@@ -25291,6 +30515,31 @@
 			// 0/"disabled"/"false"/"off"/"no": OFF
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Witch Remove"				"1"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Witch Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"1"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Witch Amount"				"3"
+				"Witch Chance"				"33.3"
+				"Witch Cooldown"			"0"
+				"Witch Damage"				"5.0"
+				"Witch Lifetime"			"0.0"
+				"Witch Range"				"500.0"
+				"Witch Remove"				"1"
+			}
 		}
 	}
 }
@@ -25412,6 +30661,24 @@
 			// Minimum: 0 (OFF, use the value set by the game.)
 			// Maximum: 1000000
 			"Xiphos Max Health"			"100"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Xiphos Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Human Ability"				"0"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Effect"			"0"
+				"Ability Message"			"0"
+				"Xiphos Chance"				"33.3"
+				"Xiphos Max Health"			"100"
+			}
 		}
 	}
 }
@@ -25555,6 +30822,20 @@
 			// 1/"enabled"/"true"/"on"/"yes": ON
 			"Ability Message"			"0"
 
+			// Check line-of-sight when the Mutant Tank uses its abilities.
+			// Note: This setting can be overridden for specific players.
+			// --
+			// Minimum: 0
+			// Maximum: 5
+			// --
+			// 0: OFF
+			// 1: Check if there is a solid object between the Mutant Tank and survivors.
+			// 2: Option 1 + Check if the Mutant Tank is looking toward the survivors.
+			// 3: Option 1 + Check if the Mutant Tank is looking away from the survivors.
+			// 4: Option 1 + Check if the survivors are looking toward the Mutant Tank.
+			// 5: Option 1 + Check if the survivors are looking away from the Mutant Tank.
+			"Ability Sight"				"0"
+
 			// The Mutant Tank has this many chances out of 100.0% to trigger the ability.
 			// Note: This is ignored when the "Combo Ability" setting is set to "1".
 			// Note: This setting can be overridden for specific players.
@@ -25649,6 +30930,35 @@
 			// "closest" - 1.0 range
 			// "farthest" - 99999.0 range
 			"Yell Range"				"500.0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Yell Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Immunity Flags"			""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Ability Sight"				"0"
+				"Yell Chance"				"33.3"
+				"Yell Cooldown"				"0"
+				"Yell Damage"				"5.0"
+				"Yell Duration"				"5"
+				"Yell Interval"				"5.0"
+				"Yell Mode"				"0"
+				"Yell Pitch"				"100"
+				"Yell Range"				"500.0"
+			}
 		}
 	}
 }
@@ -25873,6 +31183,32 @@
 			// 32: Roadcrew Worker (Hard Rain)
 			// 64: Riot Cop (The Parish)
 			"Zombie Type"				"0"
+
+			"Special" // Syntax: "Special"/"spec"/"Infected"/"inf"
+			{
+				// Note: Override any of the settings in the "Zombie Ability" section for each special infected here.
+
+				// Example
+				"Access Flags"				""
+				"Close Areas Only"			"0.0"
+				"Combo Ability"				"0"
+				"Human Ability"				"0"
+				"Human Ammo"				"5"
+				"Human Cooldown"			"0"
+				"Human Duration"			"5"
+				"Human Mode"				"1"
+				"Open Areas Only"			"0.0"
+				"Requires Humans"			"0"
+				"Ability Enabled"			"0"
+				"Ability Message"			"0"
+				"Zombie Amount"				"10"
+				"Zombie Chance"				"33.3"
+				"Zombie Cooldown"			"0"
+				"Zombie Duration"			"0"
+				"Zombie Interval"			"5.0"
+				"Zombie Mode"				"0"
+				"Zombie Type"				"0"
+			}
 		}
 	}
 }
