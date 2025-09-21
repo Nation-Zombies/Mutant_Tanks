@@ -1,6 +1,6 @@
 /**
- * Mutant Tanks: a L4D/L4D2 SourceMod Plugin
- * Copyright (C) 2023  Alfred "Psyk0tik" Llagas
+ * Mutant Tanks: A L4D/L4D2 SourceMod Plugin
+ * Copyright (C) 2017-2025  Alfred "Psyk0tik" Llagas
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -567,8 +567,8 @@ public void MT_OnCombineAbilities(int tank, int type, const float random, const 
 							}
 						}
 					}
-					case MT_COMBO_POSTSPAWN: vShoveRange(tank, 0, 2, random, iPos);
-					case MT_COMBO_UPONDEATH: vShoveRange(tank, 0, 1, random, iPos);
+					case MT_COMBO_POSTSPAWN: vShoveRange(tank, 0, 1, random, iPos);
+					case MT_COMBO_UPONDEATH: vShoveRange(tank, 0, 0, random, iPos);
 				}
 
 				break;
@@ -952,7 +952,7 @@ public void MT_OnEventFired(Event event, const char[] name, bool dontBroadcast)
 		int iTankId = event.GetInt("userid"), iTank = GetClientOfUserId(iTankId);
 		if (MT_IsTankSupported(iTank, MT_CHECK_INDEX|MT_CHECK_INGAME))
 		{
-			vShoveRange(iTank, 1, 1, GetRandomFloat(0.1, 100.0));
+			vShoveRange(iTank, 1, 0, GetRandomFloat(0.1, 100.0));
 			vRemoveShove(iTank);
 		}
 	}
@@ -971,7 +971,7 @@ public void MT_OnEventFired(Event event, const char[] name, bool dontBroadcast)
 		int iTankId = event.GetInt("userid"), iTank = GetClientOfUserId(iTankId);
 		if (MT_IsTankSupported(iTank, MT_CHECK_INDEX|MT_CHECK_INGAME))
 		{
-			vShoveRange(iTank, 1, 2, GetRandomFloat(0.1, 100.0));
+			vShoveRange(iTank, 1, 1, GetRandomFloat(0.1, 100.0));
 			vRemoveShove(iTank);
 		}
 	}
@@ -1040,7 +1040,7 @@ void vShovePostTankSpawn(int tank)
 public void MT_OnPostTankSpawn(int tank)
 #endif
 {
-	vShoveRange(tank, 1, 2, GetRandomFloat(0.1, 100.0));
+	vShoveRange(tank, 1, 1, GetRandomFloat(0.1, 100.0));
 }
 
 void vShoveAbility(int tank, float random, int pos = -1)
@@ -1270,35 +1270,37 @@ void vShoveReset3(int tank)
 	g_esShovePlayer[tank].g_iRangeCooldown = -1;
 }
 
-void tTimerShoveCombo(Handle timer, DataPack pack)
+Action tTimerShoveCombo(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
 	if (!MT_IsCorePluginEnabled() || !MT_IsTankSupported(iTank) || (!MT_HasAdminAccess(iTank) && !bHasAdminAccess(iTank, g_esShoveAbility[g_esShovePlayer[iTank].g_iTankTypeRecorded].g_iAccessFlags, g_esShovePlayer[iTank].g_iAccessFlags)) || !MT_IsTypeEnabled(g_esShovePlayer[iTank].g_iTankType, iTank) || !MT_IsCustomTankSupported(iTank) || g_esShoveCache[iTank].g_iShoveAbility == 0)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	float flRandom = pack.ReadFloat();
 	int iPos = pack.ReadCell();
 	vShoveAbility(iTank, flRandom, iPos);
+
+	return Plugin_Continue;
 }
 
-void tTimerShoveCombo2(Handle timer, DataPack pack)
+Action tTimerShoveCombo2(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
 	int iSurvivor = GetClientOfUserId(pack.ReadCell());
 	if (!bIsSurvivor(iSurvivor) || g_esShovePlayer[iSurvivor].g_bAffected)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
 	if (!MT_IsCorePluginEnabled() || !MT_IsTankSupported(iTank) || (!MT_HasAdminAccess(iTank) && !bHasAdminAccess(iTank, g_esShoveAbility[g_esShovePlayer[iTank].g_iTankTypeRecorded].g_iAccessFlags, g_esShovePlayer[iTank].g_iAccessFlags)) || !MT_IsTypeEnabled(g_esShovePlayer[iTank].g_iTankType, iTank) || !MT_IsCustomTankSupported(iTank) || g_esShoveCache[iTank].g_iShoveHit == 0)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	float flRandom = pack.ReadFloat(), flChance = pack.ReadFloat();
@@ -1313,6 +1315,8 @@ void tTimerShoveCombo2(Handle timer, DataPack pack)
 	{
 		vShoveHit(iSurvivor, iTank, flRandom, flChance, g_esShoveCache[iTank].g_iShoveHit, MT_MESSAGE_MELEE, MT_ATTACK_MELEE, iPos);
 	}
+
+	return Plugin_Continue;
 }
 
 Action tTimerShove(Handle timer, DataPack pack)

@@ -1,6 +1,6 @@
 /**
- * Mutant Tanks: a L4D/L4D2 SourceMod Plugin
- * Copyright (C) 2023  Alfred "Psyk0tik" Llagas
+ * Mutant Tanks: A L4D/L4D2 SourceMod Plugin
+ * Copyright (C) 2017-2025  Alfred "Psyk0tik" Llagas
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -46,6 +46,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 }
 
 #define MT_GAMEDATA "mutant_tanks"
+
+#define SOUND_HEARTBEAT "player/heartbeatloop.wav"
 #else
 	#if MT_BURY_COMPILE_METHOD == 1
 		#error This file must be compiled as a standalone plugin.
@@ -295,6 +297,8 @@ void vBuryMapStart()
 public void OnMapStart()
 #endif
 {
+	PrecacheSound(SOUND_HEARTBEAT, true);
+
 	vBuryReset();
 }
 
@@ -484,7 +488,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	{
 		TeleportEntity(client, .angles = g_esBuryPlayer[client].g_flAngle);
 
-		int iWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+		int iWeapon = iGetSurvivorActiveWeapon(client);
 		if (iWeapon > MaxClients && g_esBuryPlayer[client].g_flDuration > 0.0)
 		{
 			SetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack", g_esBuryPlayer[client].g_flDuration);
@@ -1018,10 +1022,14 @@ public void MT_OnEventFired(Event event, const char[] name, bool dontBroadcast)
 	}
 	else if (StrEqual(name, "player_death") || StrEqual(name, "player_spawn"))
 	{
-		int iTankId = event.GetInt("userid"), iTank = GetClientOfUserId(iTankId);
-		if (MT_IsTankSupported(iTank, MT_CHECK_INDEX|MT_CHECK_INGAME))
+		int iUserId = event.GetInt("userid"), iPlayer = GetClientOfUserId(iUserId);
+		if (MT_IsTankSupported(iPlayer, MT_CHECK_INDEX|MT_CHECK_INGAME))
 		{
-			vRemoveBury(iTank);
+			vRemoveBury(iPlayer);
+		}
+		else if (bIsSurvivor(iPlayer, MT_CHECK_INDEX|MT_CHECK_INGAME))
+		{
+			vStopHeartbeat(iPlayer, SOUND_HEARTBEAT);
 		}
 	}
 	else if (StrEqual(name, "player_now_it"))
@@ -1232,7 +1240,7 @@ void vBuryHit(int survivor, int tank, float random, float chance, int enabled, i
 				float flDuration = (pos != -1) ? MT_GetCombinationSetting(tank, 5, pos) : g_esBuryCache[tank].g_flBuryDuration;
 				if (flDuration > 0.0)
 				{
-					int iWeapon = GetEntPropEnt(survivor, Prop_Send, "m_hActiveWeapon");
+					int iWeapon = iGetSurvivorActiveWeapon(survivor);
 					if (iWeapon > MaxClients)
 					{
 						g_esBuryPlayer[survivor].g_flDuration = GetGameTime() + flDuration;
@@ -1349,6 +1357,7 @@ void vStopBury(int survivor, int tank)
 	if (bIsPlayerIncapacitated(survivor))
 	{
 		SDKCall(g_hSDKRevive, survivor);
+		StopSound(survivor, SNDCHAN_STATIC, SOUND_HEARTBEAT);
 
 		if (g_esBuryCache[tank].g_flBuryBuffer > 0.0)
 		{
@@ -1407,35 +1416,37 @@ void vStopBury(int survivor, int tank)
 	}
 }
 
-void tTimerBuryCombo(Handle timer, DataPack pack)
+Action tTimerBuryCombo(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
 	if (!MT_IsCorePluginEnabled() || !MT_IsTankSupported(iTank) || (!MT_HasAdminAccess(iTank) && !bHasAdminAccess(iTank, g_esBuryAbility[g_esBuryPlayer[iTank].g_iTankTypeRecorded].g_iAccessFlags, g_esBuryPlayer[iTank].g_iAccessFlags)) || !MT_IsTypeEnabled(g_esBuryPlayer[iTank].g_iTankType, iTank) || !MT_IsCustomTankSupported(iTank) || g_esBuryCache[iTank].g_iBuryAbility == 0)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	float flRandom = pack.ReadFloat();
 	int iPos = pack.ReadCell();
 	vBuryAbility(iTank, flRandom, iPos);
+
+	return Plugin_Continue;
 }
 
-void tTimerBuryCombo2(Handle timer, DataPack pack)
+Action tTimerBuryCombo2(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
 	int iSurvivor = GetClientOfUserId(pack.ReadCell());
 	if (!bIsSurvivor(iSurvivor) || g_esBuryPlayer[iSurvivor].g_bAffected)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
 	if (!MT_IsCorePluginEnabled() || !MT_IsTankSupported(iTank) || (!MT_HasAdminAccess(iTank) && !bHasAdminAccess(iTank, g_esBuryAbility[g_esBuryPlayer[iTank].g_iTankTypeRecorded].g_iAccessFlags, g_esBuryPlayer[iTank].g_iAccessFlags)) || !MT_IsTypeEnabled(g_esBuryPlayer[iTank].g_iTankType, iTank) || !MT_IsCustomTankSupported(iTank) || g_esBuryCache[iTank].g_iBuryHit == 0)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	float flRandom = pack.ReadFloat(), flChance = pack.ReadFloat();
@@ -1450,9 +1461,11 @@ void tTimerBuryCombo2(Handle timer, DataPack pack)
 	{
 		vBuryHit(iSurvivor, iTank, flRandom, flChance, g_esBuryCache[iTank].g_iBuryHit, MT_MESSAGE_MELEE, MT_ATTACK_MELEE, iPos);
 	}
+
+	return Plugin_Continue;
 }
 
-void tTimerStopBury(Handle timer, DataPack pack)
+Action tTimerStopBury(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
@@ -1462,7 +1475,7 @@ void tTimerStopBury(Handle timer, DataPack pack)
 		g_esBuryPlayer[iSurvivor].g_bAffected = false;
 		g_esBuryPlayer[iSurvivor].g_iOwner = -1;
 
-		return;
+		return Plugin_Stop;
 	}
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
@@ -1470,7 +1483,7 @@ void tTimerStopBury(Handle timer, DataPack pack)
 	{
 		vStopBury(iSurvivor, iTank);
 
-		return;
+		return Plugin_Stop;
 	}
 
 	vStopBury(iSurvivor, iTank);
@@ -1481,4 +1494,6 @@ void tTimerStopBury(Handle timer, DataPack pack)
 		MT_PrintToChatAll("%s %t", MT_TAG2, "Bury2", iSurvivor);
 		MT_LogMessage(MT_LOG_ABILITY, "%s %T", MT_TAG, "Bury2", LANG_SERVER, iSurvivor);
 	}
+
+	return Plugin_Continue;
 }

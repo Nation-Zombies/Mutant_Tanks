@@ -1,6 +1,6 @@
 /**
- * Mutant Tanks: a L4D/L4D2 SourceMod Plugin
- * Copyright (C) 2023  Alfred "Psyk0tik" Llagas
+ * Mutant Tanks: A L4D/L4D2 SourceMod Plugin
+ * Copyright (C) 2017-2025  Alfred "Psyk0tik" Llagas
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -476,7 +476,7 @@ Action OnFireTakeDamage(int victim, int &attacker, int &inflictor, float &damage
 				}
 			}
 
-			if ((damagetype & DMG_BURN) && (g_esFireCache[attacker].g_iFireAbility > 0 || g_esFireCache[attacker].g_iFireDeath > 0 || g_esFireCache[attacker].g_iFireHit > 0 || g_esFireCache[attacker].g_iFireRockBreak > 0))
+			if ((damagetype & DMG_BURN) && (g_esFireCache[attacker].g_iFireAbility > 0 || g_esFireCache[attacker].g_iFireDeath > 0 || g_esFireCache[attacker].g_iFireHit > 0 || g_esFireCache[attacker].g_iFireRockBreak > 0) && g_esFireCache[attacker].g_flFireDamage > 0.0)
 			{
 				damage = MT_GetScaledDamage(g_esFireCache[attacker].g_flFireDamage);
 
@@ -608,8 +608,8 @@ public void MT_OnCombineAbilities(int tank, int type, const float random, const 
 							vFireRockBreak2(tank, weapon, random, iPos);
 						}
 					}
-					case MT_COMBO_POSTSPAWN: vFireRange(tank, 0, 2, random, iPos);
-					case MT_COMBO_UPONDEATH: vFireRange(tank, 0, 1, random, iPos);
+					case MT_COMBO_POSTSPAWN: vFireRange(tank, 0, 1, random, iPos);
+					case MT_COMBO_UPONDEATH: vFireRange(tank, 0, 0, random, iPos);
 				}
 
 				break;
@@ -776,7 +776,7 @@ public void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const 
 			g_esFireTeammate[admin].g_iFireSight = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "AbilitySight", "Ability Sight", "Ability_Sight", "sight", g_esFireTeammate[admin].g_iFireSight, value, -1, 5);
 			g_esFireTeammate[admin].g_flFireChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireChance", "Fire Chance", "Fire_Chance", "chance", g_esFireTeammate[admin].g_flFireChance, value, -1.0, 100.0);
 			g_esFireTeammate[admin].g_iFireCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireCooldown", "Fire Cooldown", "Fire_Cooldown", "cooldown", g_esFireTeammate[admin].g_iFireCooldown, value, -1, 99999);
-			g_esFireTeammate[admin].g_flFireDamage = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireChance", "Fire Chance", "Fire_Chance", "chance", g_esFireTeammate[admin].g_flFireDamage, value, -1.0, 100.0);
+			g_esFireTeammate[admin].g_flFireDamage = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDamage", "Fire Damage", "Fire_Damage", "damage", g_esFireTeammate[admin].g_flFireDamage, value, -1.0, 99999.0);
 			g_esFireTeammate[admin].g_iFireDeath = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDeath", "Fire Death", "Fire_Death", "death", g_esFireTeammate[admin].g_iFireDeath, value, -1, 3);
 			g_esFireTeammate[admin].g_flFireDeathChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDeathChance", "Fire Death Chance", "Fire_Death_Chance", "deathchance", g_esFireTeammate[admin].g_flFireDeathChance, value, -1.0, 99999.0);
 			g_esFireTeammate[admin].g_iFireHit = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireHit", "Fire Hit", "Fire_Hit", "hit", g_esFireTeammate[admin].g_iFireHit, value, -1, 1);
@@ -784,9 +784,9 @@ public void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const 
 			g_esFireTeammate[admin].g_flFireRange = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRange", "Fire Range", "Fire_Range", "range", g_esFireTeammate[admin].g_flFireRange, value, -1.0, 99999.0);
 			g_esFireTeammate[admin].g_flFireRangeChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRangeChance", "Fire Range Chance", "Fire_Range_Chance", "rangechance", g_esFireTeammate[admin].g_flFireRangeChance, value, -1.0, 100.0);
 			g_esFireTeammate[admin].g_iFireRangeCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRangeCooldown", "Fire Range Cooldown", "Fire_Range_Cooldown", "rangecooldown", g_esFireTeammate[admin].g_iFireRangeCooldown, value, -1, 99999);
-			g_esFireTeammate[admin].g_iFireRockBreak = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRockBreak", "Fire Rock Break", "Fire_Rock_Break", "rock", g_esFireTeammate[admin].g_iFireRockBreak, value, -1, 1);
-			g_esFireTeammate[admin].g_flFireRockChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRockChance", "Fire Rock Chance", "Fire_Rock_Chance", "rockchance", g_esFireTeammate[admin].g_flFireRockChance, value, -1.0, 100.0);
-			g_esFireTeammate[admin].g_iFireRockCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRockCooldown", "Fire Rock Cooldown", "Fire_Rock_Cooldown", "rockcooldown", g_esFireTeammate[admin].g_iFireRockCooldown, value, -1, 99999);
+			g_esFireTeammate[admin].g_iFireRockBreak = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FirePin", "Fire Pin", "Fire_Pin", "pin", g_esFireTeammate[admin].g_iFireRockBreak, value, -1, 1);
+			g_esFireTeammate[admin].g_flFireRockChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FirePinChance", "Fire Pin Chance", "Fire_Pin_Chance", "pinchance", g_esFireTeammate[admin].g_flFireRockChance, value, -1.0, 100.0);
+			g_esFireTeammate[admin].g_iFireRockCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FirePinCooldown", "Fire Pin Cooldown", "Fire_Pin_Cooldown", "pincooldown", g_esFireTeammate[admin].g_iFireRockCooldown, value, -1, 99999);
 		}
 		else
 		{
@@ -805,7 +805,7 @@ public void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const 
 			g_esFirePlayer[admin].g_iFireSight = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "AbilitySight", "Ability Sight", "Ability_Sight", "sight", g_esFirePlayer[admin].g_iFireSight, value, -1, 5);
 			g_esFirePlayer[admin].g_flFireChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireChance", "Fire Chance", "Fire_Chance", "chance", g_esFirePlayer[admin].g_flFireChance, value, -1.0, 100.0);
 			g_esFirePlayer[admin].g_iFireCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireCooldown", "Fire Cooldown", "Fire_Cooldown", "cooldown", g_esFirePlayer[admin].g_iFireCooldown, value, -1, 99999);
-			g_esFirePlayer[admin].g_flFireDamage = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireChance", "Fire Chance", "Fire_Chance", "chance", g_esFirePlayer[admin].g_flFireDamage, value, -1.0, 100.0);
+			g_esFirePlayer[admin].g_flFireDamage = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDamage", "Fire Damage", "Fire_Damage", "damage", g_esFirePlayer[admin].g_flFireDamage, value, -1.0, 99999.0);
 			g_esFirePlayer[admin].g_iFireDeath = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDeath", "Fire Death", "Fire_Death", "death", g_esFirePlayer[admin].g_iFireDeath, value, -1, 3);
 			g_esFirePlayer[admin].g_flFireDeathChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDeathChance", "Fire Death Chance", "Fire_Death_Chance", "deathchance", g_esFirePlayer[admin].g_flFireDeathChance, value, -1.0, 99999.0);
 			g_esFirePlayer[admin].g_iFireHit = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireHit", "Fire Hit", "Fire_Hit", "hit", g_esFirePlayer[admin].g_iFireHit, value, -1, 1);
@@ -840,7 +840,7 @@ public void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const 
 			g_esFireSpecial[type].g_iFireSight = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "AbilitySight", "Ability Sight", "Ability_Sight", "sight", g_esFireSpecial[type].g_iFireSight, value, -1, 5);
 			g_esFireSpecial[type].g_flFireChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireChance", "Fire Chance", "Fire_Chance", "chance", g_esFireSpecial[type].g_flFireChance, value, -1.0, 100.0);
 			g_esFireSpecial[type].g_iFireCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireCooldown", "Fire Cooldown", "Fire_Cooldown", "cooldown", g_esFireSpecial[type].g_iFireCooldown, value, -1, 99999);
-			g_esFireSpecial[type].g_flFireDamage = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireChance", "Fire Chance", "Fire_Chance", "chance", g_esFireSpecial[type].g_flFireDamage, value, -1.0, 100.0);
+			g_esFireSpecial[type].g_flFireDamage = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDamage", "Fire Damage", "Fire_Damage", "damage", g_esFireSpecial[type].g_flFireDamage, value, -1.0, 99999.0);
 			g_esFireSpecial[type].g_iFireDeath = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDeath", "Fire Death", "Fire_Death", "death", g_esFireSpecial[type].g_iFireDeath, value, -1, 3);
 			g_esFireSpecial[type].g_flFireDeathChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDeathChance", "Fire Death Chance", "Fire_Death_Chance", "deathchance", g_esFireSpecial[type].g_flFireDeathChance, value, -1.0, 99999.0);
 			g_esFireSpecial[type].g_iFireHit = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireHit", "Fire Hit", "Fire_Hit", "hit", g_esFireSpecial[type].g_iFireHit, value, -1, 1);
@@ -848,9 +848,9 @@ public void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const 
 			g_esFireSpecial[type].g_flFireRange = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRange", "Fire Range", "Fire_Range", "range", g_esFireSpecial[type].g_flFireRange, value, -1.0, 99999.0);
 			g_esFireSpecial[type].g_flFireRangeChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRangeChance", "Fire Range Chance", "Fire_Range_Chance", "rangechance", g_esFireSpecial[type].g_flFireRangeChance, value, -1.0, 100.0);
 			g_esFireSpecial[type].g_iFireRangeCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRangeCooldown", "Fire Range Cooldown", "Fire_Range_Cooldown", "rangecooldown", g_esFireSpecial[type].g_iFireRangeCooldown, value, -1, 99999);
-			g_esFireSpecial[type].g_iFireRockBreak = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRockBreak", "Fire Rock Break", "Fire_Rock_Break", "rock", g_esFireSpecial[type].g_iFireRockBreak, value, -1, 1);
-			g_esFireSpecial[type].g_flFireRockChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRockChance", "Fire Rock Chance", "Fire_Rock_Chance", "rockchance", g_esFireSpecial[type].g_flFireRockChance, value, -1.0, 100.0);
-			g_esFireSpecial[type].g_iFireRockCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireRockCooldown", "Fire Rock Cooldown", "Fire_Rock_Cooldown", "rockcooldown", g_esFireSpecial[type].g_iFireRockCooldown, value, -1, 99999);
+			g_esFireSpecial[type].g_iFireRockBreak = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FirePin", "Fire Pin", "Fire_Pin", "pin", g_esFireSpecial[type].g_iFireRockBreak, value, -1, 1);
+			g_esFireSpecial[type].g_flFireRockChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FirePinChance", "Fire Pin Chance", "Fire_Pin_Chance", "pinchance", g_esFireSpecial[type].g_flFireRockChance, value, -1.0, 100.0);
+			g_esFireSpecial[type].g_iFireRockCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FirePinCooldown", "Fire Pin Cooldown", "Fire_Pin_Cooldown", "pincooldown", g_esFireSpecial[type].g_iFireRockCooldown, value, -1, 99999);
 		}
 		else
 		{
@@ -869,7 +869,7 @@ public void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const 
 			g_esFireAbility[type].g_iFireSight = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "AbilitySight", "Ability Sight", "Ability_Sight", "sight", g_esFireAbility[type].g_iFireSight, value, -1, 5);
 			g_esFireAbility[type].g_flFireChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireChance", "Fire Chance", "Fire_Chance", "chance", g_esFireAbility[type].g_flFireChance, value, -1.0, 100.0);
 			g_esFireAbility[type].g_iFireCooldown = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireCooldown", "Fire Cooldown", "Fire_Cooldown", "cooldown", g_esFireAbility[type].g_iFireCooldown, value, -1, 99999);
-			g_esFireAbility[type].g_flFireDamage = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireChance", "Fire Chance", "Fire_Chance", "chance", g_esFireAbility[type].g_flFireDamage, value, -1.0, 100.0);
+			g_esFireAbility[type].g_flFireDamage = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDamage", "Fire Damage", "Fire_Damage", "damage", g_esFireAbility[type].g_flFireDamage, value, -1.0, 99999.0);
 			g_esFireAbility[type].g_iFireDeath = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDeath", "Fire Death", "Fire_Death", "death", g_esFireAbility[type].g_iFireDeath, value, -1, 3);
 			g_esFireAbility[type].g_flFireDeathChance = flGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireDeathChance", "Fire Death Chance", "Fire_Death_Chance", "deathchance", g_esFireAbility[type].g_flFireDeathChance, value, -1.0, 99999.0);
 			g_esFireAbility[type].g_iFireHit = iGetKeyValue(subsection, MT_FIRE_SECTION, MT_FIRE_SECTION2, MT_FIRE_SECTION3, MT_FIRE_SECTION4, key, "FireHit", "Fire Hit", "Fire_Hit", "hit", g_esFireAbility[type].g_iFireHit, value, -1, 1);
@@ -1009,7 +1009,7 @@ public void MT_OnEventFired(Event event, const char[] name, bool dontBroadcast)
 		int iTankId = event.GetInt("userid"), iTank = GetClientOfUserId(iTankId);
 		if (MT_IsTankSupported(iTank, MT_CHECK_INDEX|MT_CHECK_INGAME))
 		{
-			vFireRange(iTank, 1, 1, GetRandomFloat(0.1, 100.0));
+			vFireRange(iTank, 1, 0, GetRandomFloat(0.1, 100.0));
 			vRemoveFire(iTank);
 		}
 	}
@@ -1028,7 +1028,7 @@ public void MT_OnEventFired(Event event, const char[] name, bool dontBroadcast)
 		int iTankId = event.GetInt("userid"), iTank = GetClientOfUserId(iTankId);
 		if (MT_IsTankSupported(iTank, MT_CHECK_INDEX|MT_CHECK_INGAME))
 		{
-			vFireRange(iTank, 1, 2, GetRandomFloat(0.1, 100.0));
+			vFireRange(iTank, 1, 1, GetRandomFloat(0.1, 100.0));
 			vRemoveFire(iTank);
 		}
 	}
@@ -1109,7 +1109,7 @@ void vFirePostTankSpawn(int tank)
 public void MT_OnPostTankSpawn(int tank)
 #endif
 {
-	vFireRange(tank, 1, 2, GetRandomFloat(0.1, 100.0));
+	vFireRange(tank, 1, 1, GetRandomFloat(0.1, 100.0));
 }
 
 #if defined MT_ABILITIES_MAIN
@@ -1346,35 +1346,37 @@ void vFireReset()
 	}
 }
 
-void tTimerFireCombo(Handle timer, DataPack pack)
+Action tTimerFireCombo(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
 	if (!MT_IsCorePluginEnabled() || !MT_IsTankSupported(iTank) || (!MT_HasAdminAccess(iTank) && !bHasAdminAccess(iTank, g_esFireAbility[g_esFirePlayer[iTank].g_iTankTypeRecorded].g_iAccessFlags, g_esFirePlayer[iTank].g_iAccessFlags)) || !MT_IsTypeEnabled(g_esFirePlayer[iTank].g_iTankType, iTank) || !MT_IsCustomTankSupported(iTank) || g_esFireCache[iTank].g_iFireAbility == 0)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	float flRandom = pack.ReadFloat();
 	int iPos = pack.ReadCell();
 	vFireAbility(iTank, flRandom, iPos);
+
+	return Plugin_Continue;
 }
 
-void tTimerFireCombo2(Handle timer, DataPack pack)
+Action tTimerFireCombo2(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
 	int iSurvivor = GetClientOfUserId(pack.ReadCell());
 	if (!bIsSurvivor(iSurvivor))
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
 	if (!MT_IsCorePluginEnabled() || !MT_IsTankSupported(iTank) || (!MT_HasAdminAccess(iTank) && !bHasAdminAccess(iTank, g_esFireAbility[g_esFirePlayer[iTank].g_iTankTypeRecorded].g_iAccessFlags, g_esFirePlayer[iTank].g_iAccessFlags)) || !MT_IsTypeEnabled(g_esFirePlayer[iTank].g_iTankType, iTank) || !MT_IsCustomTankSupported(iTank) || g_esFireCache[iTank].g_iFireHit == 0)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	float flRandom = pack.ReadFloat(), flChance = pack.ReadFloat();
@@ -1389,4 +1391,6 @@ void tTimerFireCombo2(Handle timer, DataPack pack)
 	{
 		vFireHit(iSurvivor, iTank, flRandom, flChance, g_esFireCache[iTank].g_iFireHit, MT_MESSAGE_MELEE, MT_ATTACK_MELEE, iPos);
 	}
+
+	return Plugin_Continue;
 }

@@ -855,6 +855,20 @@
 			}
 
 			/**
+			 * CThrow::UpdateAbility()
+			 *
+			 * Note: Detouring as a pre-hook for changing "z_tank_throw_force" per Tank before a rock is thrown.
+			 * Note: Detouring as a post-hook for changing "z_tank_throw_force" back to default after a rock is thrown.
+			 **/
+			"MTDetour_CThrow::UpdateAbility"
+			{
+				"signature"	"CThrow::UpdateAbility"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+			}
+
+			/**
 			 * CWeaponSpawn::Use(CBaseEntity *, CBaseEntity *, USE_TYPE, float)
 			 *
 			 * Note: Detouring as a pre-hook for patching weapon switches to secondary slots per player.
@@ -917,7 +931,9 @@
 			 * TankAttack::TryToThrowRock(Tank *)
 			 *
 			 * Note: Detouring as a pre-hook for patching attack choice per Tank.
+			 * Note: Detouring as a pre-hook for changing "z_tank_throw_force" per Tank before a rock is thrown.
 			 * Note: Detouring as a post-hook for removing patch for attack choice.
+			 * Note: Detouring as a post-hook for changing "z_tank_throw_force" back to default after a rock is thrown.
 			 **/
 			"MTDetour_TankAttack::TryToThrowRock"
 			{
@@ -1958,8 +1974,8 @@
 			 **/
 			"CTerrorPlayer::OnLadderDismount::WeaponDeploy"
 			{
-				"linux"		"61" // start at 8B and patch 11 bytes with NOPs (0x90)
-				"mac"		"44" // start at 8B and patch 11 bytes with NOPs (0x90)
+				"linux"		"32" // start at 74 and patch 2 bytes with NOPs (0x90)
+				"mac"		"22" // start at 75 and patch 2 bytes with NOPs (0x90)
 				"windows"	"41" // start at FF and patch 2 bytes with NOPs (0x90)
 			}
 
@@ -1974,7 +1990,7 @@
 			 **/
 			"CTerrorPlayer::OnLadderMount::WeaponHolster"
 			{
-				"linux"		"73" // start at 74 and patch 2 bytes with NOPs (0x90)
+				"linux"		"114" // start at 0F and patch 6 bytes with "90 90 90 90 90 90"
 				"mac"		"187" // start at 75 and patch 2 bytes with NOPs (0x90)
 				"windows"	"39" // start at 75 and patch 2 bytes with POP (0x5E) and RET (0xC3)
 			}
@@ -2027,7 +2043,7 @@
 			 **/
 			"CTerrorPlayer::PreThink::SafeDropLogic"
 			{
-				"linux"		"161" // start at 09 and patch 1 byte with CALL (0xFF)
+				"linux"		"187" // start at 09 and patch 1 byte with CALL (0xFF)
 				"mac"		"711" // start at 09 and patch 1 byte with CALL (0xFF)
 				"windows"	"470" // start at 09 and patch 1 byte with CALL (0xFF)
 			}
@@ -2059,7 +2075,7 @@
 			 **/
 			"CTerrorWeapon::CanDeployFor::MoveType"
 			{
-				"linux"		"149" // start at 09 and patch 1 byte with CALL (0xFF)
+				"linux"		"161" // start at 09 and patch 1 byte with CALL (0xFF)
 				"mac"		"195" // start at 09 and patch 1 byte with CALL (0xFF)
 				"windows"	"140" // start at 09 and patch 1 byte with CALL (0xFF)
 			}
@@ -2361,7 +2377,7 @@
 			}
 
 			/**
-			 * CBaseAbility::CreateForPlayer(CTerrorPlayer *)
+			 * CBaseAbility::CreateForPlayer(CTerrorPlayer*)
 			 *
 			 * How to find on Windows:
 			 * 1. Search for any of the following strings:
@@ -3819,6 +3835,25 @@
 			}
 
 			/**
+			 * CThrow::UpdateAbility()
+			 *
+			 * How to find on Windows:
+			 * 1. Find the function's offsets with asherkin's VTable dump.
+			 * 2. In IDA Pro, go to the ".rdata" section of the Windows binary.
+			 * 3. Search for "CThrow::`vftable'" to jump to the "CThrow" vtable.
+			 * 4. Compare your dump's offsets with asherkin's dump's offsets to find the target function.
+			 * 5. Look for the target function in the Windows binary.
+			 **/
+			"CThrow::UpdateAbility"
+			{
+				"library"	"server"
+				"linux"		"@_ZN6CThrow13UpdateAbilityEv"
+				"mac"		"@_ZN6CThrow13UpdateAbilityEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x57\x8B\x2A\xD8\x9F\x2A\x2A\x2A\x2A\xDF\x2A\xF6\x2A\x2A\x0F"
+						/* ? ? ? ? ? ? ? ? 57 8B ? D8 9F ? ? ? ? DF ? F6 ? ? 0F */
+			}
+
+			/**
 			 * CTraceBulletEntityEnumerator::PerformMultiTrace(Ray_t &, Vector const&, unsigned int, ITraceFilter *)
 			 *
 			 * Note: Used for finding the function.
@@ -4376,28 +4411,6 @@
 					"thrower"
 					{
 						"type"		"cbaseentity"
-					}
-				}
-			}
-
-			/**
-			 * CTerrorPlayer::PlayerRunCommand(CUserCmd *, IMoveHelper *)
-			 *
-			 * Note: Detouring as a pre-hook for patching weapon holster per player when getting on ladders.
-			 * Note: Detouring as a post-hook for removing patch for weapon holster when getting on ladders.
-			 * Note: L4D2 has two params.
-			 **/
-			"MTDetour_CTerrorPlayer::OnLadderMount"
-			{
-				"arguments"
-				{
-					"cmd"
-					{
-						"type"		"objectptr"
-					}
-					"helper"
-					{
-						"type"		"objectptr"
 					}
 				}
 			}
@@ -5281,7 +5294,7 @@
 			{
 				"linux"		"68" // start at 75 and patch 2 bytes with NOPs (0x90)
 				"mac"		"196" // start at 74 and patch 2 bytes with NOPs (0x90)
-				"windows"	"778" // start at 74 and patch 1 byte with a short jump (0xEB) to skip instruction
+				"windows"	"47" // start at 74 and patch 1 byte with a short jump (0xEB) to skip instruction
 			}
 
 			/**
@@ -5611,7 +5624,7 @@
 			}
 
 			/**
-			 * CBaseAbility::CreateForPlayer(CTerrorPlayer *)
+			 * CBaseAbility::CreateForPlayer(CTerrorPlayer*)
 			 *
 			 * How to find on Windows:
 			 * 1. Search for any of the following strings:
@@ -5900,6 +5913,25 @@
 				"mac"		"@_ZN12CFirstAidKit16OnActionCompleteEP13CTerrorPlayerP11CBaseEntity"
 				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x53\x56\x57\x8B\x2A\x2A\x85\x2A\x74\x2A\x8B\x2A\x8B\x90"
 						/* ? ? ? ? ? ? 53 56 57 8B ? ? 85 ? 74 ? 8B ? 8B 90 */
+			}
+
+			/**
+			 * CGrenadeLauncher::LaunchGrenade(CTerrorPlayer*)
+			 *
+			 * Note: Used for calling the function.
+			 *
+			 * How to find on Windows:
+			 * 1. Search for the "CGrenadeLauncher_Projectile spawned at %f %f %f, velocity %f %f %f\n" string.
+			 * 2. The string can only be found in "CGrenadeLauncher_Projectile::Create".
+			 * 3. The only function that calls "CGrenadeLauncher_Projectile::Create" should be this function.
+			 **/
+			"CGrenadeLauncher::LaunchGrenade"
+			{
+				"library"	"server"
+				"linux"		"@_ZN16CGrenadeLauncher13LaunchGrenadeEP13CTerrorPlayer"
+				"mac"		"@_ZN16CGrenadeLauncher13LaunchGrenadeEP13CTerrorPlayer"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x83\x2A\x2A\x83\x2A\x2A\x55\x8B\x2A\x2A\x89\x2A\x2A\x2A\x8B\x2A\x81\xEC\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x56\x8B\x2A\x2A\x57\x8B\x2A\x8D"
+						/* ? ? ? ? ? ? 83 ? ? 83 ? ? 55 8B ? ? 89 ? ? ? 8B ? 81 EC ? ? ? ? A1 ? ? ? ? 33 ? 89 ? ? 56 8B ? ? 57 8B ? 8D */
 			}
 
 			/**
@@ -7008,7 +7040,6 @@
 			/**
 			 * CTerrorPlayer::OnLadderMount()
 			 *
-			 * Note: (Windows) This function is in-lined with the "CTerrorPlayer::PlayerRunCommand" function.
 			 * Note: Used for detouring/finding the function.
 			 *
 			 * How to find on Windows:
@@ -7020,8 +7051,8 @@
 				"library"	"server"
 				"linux"		"@_ZN13CTerrorPlayer13OnLadderMountEv"
 				"mac"		"@_ZN13CTerrorPlayer13OnLadderMountEv"
-				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x53\x56\x57\x33\x2A\x89\x2A\x2A\x89\x2A\x2A\x8B\x2A\x39\x2A\x2A\x74\x2A\x8B\x2A\x2A\x68\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x57\x57\x57\x57\x8D\x2A\x2A\x51\x50\xFF\x2A\xA1\x2A\x2A\x2A\x2A\x83\x2A\x2A\x8B\x2A\x2A\x8B\x2A\x2A\x8B\x2A\x2A\x6A\x2A\x57\x68\x2A\x2A\x2A\x2A\x57\x89\x2A\x2A\x8B\x0D\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x89\x2A\x2A\x89\x2A\x2A\xFF\x15\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x8B"
-						/* ? ? ? ? ? ? A1 ? ? ? ? 53 56 57 33 ? 89 ? ? 89 ? ? 8B ? 39 ? ? 74 ? 8B ? ? 68 ? ? ? ? 8B ? ? 68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 57 57 57 57 8D ? ? 51 50 FF ? A1 ? ? ? ? 83 ? ? 8B ? ? 8B ? ? 8B ? ? 6A ? 57 68 ? ? ? ? 57 89 ? ? 8B 0D ? ? ? ? 68 ? ? ? ? 89 ? ? 89 ? ? FF 15 ? ? ? ? 8B ? ? 8B */
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x6A\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x50"
+						/* ? ? ? ? ? ? 8B ? E8 ? ? ? ? 8B ? E8 ? ? ? ? 6A ? 8B ? E8 ? ? ? ? 8B ? E8 ? ? ? ? 50 */
 			}
 
 			/**
@@ -7423,6 +7454,25 @@
 				"mac"		"@_ZN13CTerrorWeapon8TrySwingEfff"
 				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x56\x8B\x2A\x8B\x2A\x8B\x90\x2A\x2A\x2A\x2A\xFF\x2A\x84\x2A\x0F\x85\x2A\x2A\x2A\x2A\x53"
 						/* ? ? ? ? ? ? 56 8B ? 8B ? 8B 90 ? ? ? ? FF ? 84 ? 0F 85 ? ? ? ? 53 */
+			}
+
+			/**
+			 * CThrow::UpdateAbility()
+			 *
+			 * How to find on Windows:
+			 * 1. Find the function's offsets with asherkin's VTable dump.
+			 * 2. In IDA Pro, go to the ".rdata" section of the Windows binary.
+			 * 3. Search for "CThrow::`vftable'" to jump to the "CThrow" vtable.
+			 * 4. Compare your dump's offsets with asherkin's dump's offsets to find the target function.
+			 * 5. Look for the target function in the Windows binary.
+			 **/
+			"CThrow::UpdateAbility"
+			{
+				"library"	"server"
+				"linux"		"@_ZN6CThrow13UpdateAbilityEv"
+				"mac"		"@_ZN6CThrow13UpdateAbilityEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x57\x8B\x2A\x8B\x87\x2A\x2A\x2A\x2A\x89"
+						/* ? ? ? ? ? ? ? ? ? A1 ? ? ? ? 33 ? 89 ? ? 57 8B ? 8B 87 ? ? ? ? 89 */
 			}
 
 			/**

@@ -1,6 +1,6 @@
 /**
- * Mutant Tanks: a L4D/L4D2 SourceMod Plugin
- * Copyright (C) 2023  Alfred "Psyk0tik" Llagas
+ * Mutant Tanks: A L4D/L4D2 SourceMod Plugin
+ * Copyright (C) 2017-2025  Alfred "Psyk0tik" Llagas
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -479,7 +479,7 @@ Action OnBombTakeDamage(int victim, int &attacker, int &inflictor, float &damage
 				}
 			}
 
-			if (((damagetype & DMG_BLAST) || (damagetype & DMG_BLAST_SURFACE) || (damagetype & DMG_AIRBOAT) || (damagetype & DMG_PLASMA)) && (g_esBombCache[attacker].g_iBombAbility > 0 || g_esBombCache[attacker].g_iBombDeath > 0 || g_esBombCache[attacker].g_iBombHit > 0 || g_esBombCache[attacker].g_iBombRockBreak > 0))
+			if (((damagetype & DMG_BLAST) || (damagetype & DMG_BLAST_SURFACE) || (damagetype & DMG_AIRBOAT) || (damagetype & DMG_PLASMA)) && (g_esBombCache[attacker].g_iBombAbility > 0 || g_esBombCache[attacker].g_iBombDeath > 0 || g_esBombCache[attacker].g_iBombHit > 0 || g_esBombCache[attacker].g_iBombRockBreak > 0) && g_esBombCache[attacker].g_flBombDamage > 0.0)
 			{
 				damage = MT_GetScaledDamage(g_esBombCache[attacker].g_flBombDamage);
 
@@ -611,8 +611,8 @@ public void MT_OnCombineAbilities(int tank, int type, const float random, const 
 							vBombRockBreak2(tank, weapon, random, iPos);
 						}
 					}
-					case MT_COMBO_POSTSPAWN: vBombRange(tank, 0, 2, random, iPos);
-					case MT_COMBO_UPONDEATH: vBombRange(tank, 0, 1, random, iPos);
+					case MT_COMBO_POSTSPAWN: vBombRange(tank, 0, 1, random, iPos);
+					case MT_COMBO_UPONDEATH: vBombRange(tank, 0, 0, random, iPos);
 				}
 
 				break;
@@ -787,9 +787,9 @@ public void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const 
 			g_esBombTeammate[admin].g_flBombRange = flGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRange", "Bomb Range", "Bomb_Range", "range", g_esBombTeammate[admin].g_flBombRange, value, -1.0, 99999.0);
 			g_esBombTeammate[admin].g_flBombRangeChance = flGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRangeChance", "Bomb Range Chance", "Bomb_Range_Chance", "rangechance", g_esBombTeammate[admin].g_flBombRangeChance, value, -1.0, 100.0);
 			g_esBombTeammate[admin].g_iBombRangeCooldown = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRangeCooldown", "Bomb Range Cooldown", "Bomb_Range_Cooldown", "rangecooldown", g_esBombTeammate[admin].g_iBombRangeCooldown, value, -1, 99999);
-			g_esBombTeammate[admin].g_iBombRockBreak = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRockBreak", "Bomb Rock Break", "Bomb_Rock_Break", "rock", g_esBombTeammate[admin].g_iBombRockBreak, value, -1, 1);
-			g_esBombTeammate[admin].g_flBombRockChance = flGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRockChance", "Bomb Rock Chance", "Bomb_Rock_Chance", "rockchance", g_esBombTeammate[admin].g_flBombRockChance, value, -1.0, 100.0);
-			g_esBombTeammate[admin].g_iBombRockCooldown = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRockCooldown", "Bomb Rock Cooldown", "Bomb_Rock_Cooldown", "rockcooldown", g_esBombTeammate[admin].g_iBombRockCooldown, value, -1, 99999);
+			g_esBombTeammate[admin].g_iBombRockBreak = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombPin", "Bomb Pin", "Bomb_Pin", "pin", g_esBombTeammate[admin].g_iBombRockBreak, value, -1, 1);
+			g_esBombTeammate[admin].g_flBombRockChance = flGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombPinChance", "Bomb Pin Chance", "Bomb_Pin_Chance", "pinchance", g_esBombTeammate[admin].g_flBombRockChance, value, -1.0, 100.0);
+			g_esBombTeammate[admin].g_iBombRockCooldown = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombPinCooldown", "Bomb Pin Cooldown", "Bomb_Pin_Cooldown", "pincooldown", g_esBombTeammate[admin].g_iBombRockCooldown, value, -1, 99999);
 		}
 		else
 		{
@@ -851,9 +851,9 @@ public void MT_OnConfigsLoaded(const char[] subsection, const char[] key, const 
 			g_esBombSpecial[type].g_flBombRange = flGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRange", "Bomb Range", "Bomb_Range", "range", g_esBombSpecial[type].g_flBombRange, value, -1.0, 99999.0);
 			g_esBombSpecial[type].g_flBombRangeChance = flGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRangeChance", "Bomb Range Chance", "Bomb_Range_Chance", "rangechance", g_esBombSpecial[type].g_flBombRangeChance, value, -1.0, 100.0);
 			g_esBombSpecial[type].g_iBombRangeCooldown = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRangeCooldown", "Bomb Range Cooldown", "Bomb_Range_Cooldown", "rangecooldown", g_esBombSpecial[type].g_iBombRangeCooldown, value, -1, 99999);
-			g_esBombSpecial[type].g_iBombRockBreak = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRockBreak", "Bomb Rock Break", "Bomb_Rock_Break", "rock", g_esBombSpecial[type].g_iBombRockBreak, value, -1, 1);
-			g_esBombSpecial[type].g_flBombRockChance = flGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRockChance", "Bomb Rock Chance", "Bomb_Rock_Chance", "rockchance", g_esBombSpecial[type].g_flBombRockChance, value, -1.0, 100.0);
-			g_esBombSpecial[type].g_iBombRockCooldown = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombRockCooldown", "Bomb Rock Cooldown", "Bomb_Rock_Cooldown", "rockcooldown", g_esBombSpecial[type].g_iBombRockCooldown, value, -1, 99999);
+			g_esBombSpecial[type].g_iBombRockBreak = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombPin", "Bomb Pin", "Bomb_Pin", "pin", g_esBombSpecial[type].g_iBombRockBreak, value, -1, 1);
+			g_esBombSpecial[type].g_flBombRockChance = flGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombPinChance", "Bomb Pin Chance", "Bomb_Pin_Chance", "pinchance", g_esBombSpecial[type].g_flBombRockChance, value, -1.0, 100.0);
+			g_esBombSpecial[type].g_iBombRockCooldown = iGetKeyValue(subsection, MT_BOMB_SECTION, MT_BOMB_SECTION2, MT_BOMB_SECTION3, MT_BOMB_SECTION4, key, "BombPinCooldown", "Bomb Pin Cooldown", "Bomb_Pin_Cooldown", "pincooldown", g_esBombSpecial[type].g_iBombRockCooldown, value, -1, 99999);
 		}
 		else
 		{
@@ -1016,7 +1016,7 @@ public void MT_OnEventFired(Event event, const char[] name, bool dontBroadcast)
 		int iTankId = event.GetInt("userid"), iTank = GetClientOfUserId(iTankId);
 		if (MT_IsTankSupported(iTank, MT_CHECK_INDEX|MT_CHECK_INGAME))
 		{
-			vBombRange(iTank, 1, 1, GetRandomFloat(0.1, 100.0));
+			vBombRange(iTank, 1, 0, GetRandomFloat(0.1, 100.0));
 			vRemoveBomb(iTank);
 		}
 	}
@@ -1035,7 +1035,7 @@ public void MT_OnEventFired(Event event, const char[] name, bool dontBroadcast)
 		int iTankId = event.GetInt("userid"), iTank = GetClientOfUserId(iTankId);
 		if (MT_IsTankSupported(iTank, MT_CHECK_INDEX|MT_CHECK_INGAME))
 		{
-			vBombRange(iTank, 1, 2, GetRandomFloat(0.1, 100.0));
+			vBombRange(iTank, 1, 1, GetRandomFloat(0.1, 100.0));
 			vRemoveBomb(iTank);
 		}
 	}
@@ -1122,7 +1122,7 @@ void vBombPostTankSpawn(int tank)
 public void MT_OnPostTankSpawn(int tank)
 #endif
 {
-	vBombRange(tank, 1, 2, GetRandomFloat(0.1, 100.0));
+	vBombRange(tank, 1, 1, GetRandomFloat(0.1, 100.0));
 }
 
 #if defined MT_ABILITIES_MAIN
@@ -1366,35 +1366,37 @@ void vBombReset()
 	}
 }
 
-void tTimerBombCombo(Handle timer, DataPack pack)
+Action tTimerBombCombo(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
 	if (!MT_IsCorePluginEnabled() || !MT_IsTankSupported(iTank) || (!MT_HasAdminAccess(iTank) && !bHasAdminAccess(iTank, g_esBombAbility[g_esBombPlayer[iTank].g_iTankTypeRecorded].g_iAccessFlags, g_esBombPlayer[iTank].g_iAccessFlags)) || !MT_IsTypeEnabled(g_esBombPlayer[iTank].g_iTankType, iTank) || !MT_IsCustomTankSupported(iTank) || g_esBombCache[iTank].g_iBombAbility == 0)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	float flRandom = pack.ReadFloat();
 	int iPos = pack.ReadCell();
 	vBombAbility(iTank, flRandom, iPos);
+
+	return Plugin_Continue;
 }
 
-void tTimerBombCombo2(Handle timer, DataPack pack)
+Action tTimerBombCombo2(Handle timer, DataPack pack)
 {
 	pack.Reset();
 
 	int iSurvivor = GetClientOfUserId(pack.ReadCell());
 	if (!bIsSurvivor(iSurvivor))
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	int iTank = GetClientOfUserId(pack.ReadCell());
 	if (!MT_IsCorePluginEnabled() || !MT_IsTankSupported(iTank) || (!MT_HasAdminAccess(iTank) && !bHasAdminAccess(iTank, g_esBombAbility[g_esBombPlayer[iTank].g_iTankTypeRecorded].g_iAccessFlags, g_esBombPlayer[iTank].g_iAccessFlags)) || !MT_IsTypeEnabled(g_esBombPlayer[iTank].g_iTankType, iTank) || !MT_IsCustomTankSupported(iTank) || g_esBombCache[iTank].g_iBombHit == 0)
 	{
-		return;
+		return Plugin_Stop;
 	}
 
 	float flRandom = pack.ReadFloat(), flChance = pack.ReadFloat();
@@ -1409,4 +1411,6 @@ void tTimerBombCombo2(Handle timer, DataPack pack)
 	{
 		vBombHit(iSurvivor, iTank, flRandom, flChance, g_esBombCache[iTank].g_iBombHit, MT_MESSAGE_MELEE, MT_ATTACK_MELEE, iPos);
 	}
+
+	return Plugin_Continue;
 }
